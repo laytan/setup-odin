@@ -28,3 +28,5 @@ jobs:
       run: odin version
     - name: Report
       run: odin report
+    - name: Run test program
+      run: odin run test.odin -file

@@ -17,6 +17,7 @@ async function run() {
     // - if no need to build from source, don't
     // - build option, release|release_native|debug
     // - use odin fork
+    // - do git clone and package install in parallel
 
     // TODO: some temp dir.
 
