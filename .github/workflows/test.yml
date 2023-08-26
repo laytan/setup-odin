@@ -17,7 +17,14 @@ jobs:
 
   # test action works running from the graph
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - uses: ./
+    - name: Version
+      run: odin version
+    - name: Report
+      run: odin report
