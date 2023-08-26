@@ -34,7 +34,6 @@ async function run() {
       '--depth=1',
       '--single-branch',
       '--no-tags',
-      '--quiet',
     ]);
     // TODO: capture stderr.
     if (gitExitCode !== 0) {
@@ -71,12 +70,12 @@ async function run() {
     switch (os.platform()) {
       case 'darwin':
       case 'linux':
-        buildExitCode = await exec.exec('build_odin.sh', undefined, {
+        buildExitCode = await exec.exec('./build_odin.sh', undefined, {
           cwd: odinPath,
         });
         break;
       case 'win32':
-        buildExitCode = await exec.exec('build.bat', undefined, {
+        buildExitCode = await exec.exec('./build.bat', undefined, {
           cwd: odinPath,
         });
         break;
