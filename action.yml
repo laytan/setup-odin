@@ -1,13 +1,26 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: 'Setup Odin'
+description: 'Setup the Odin compiler'
+author: 'laytan'
 inputs:
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
+  odin-version:
+    description: 'The Odin version to setup, supports tag names and branch names'
+    default: 'master'
     required: true
-    default: '1000'
-outputs:
-  time: # output will be available to future steps
-    description: 'The current time after waiting'
+  # llvm-version:
+  #   description: 'Which version of LLVM to install, supports 11, 12, 13 and 14'
+  #   default: '12'
+  #   required: true
+  # cache:
+  #   description: 'Enables caching the compiler binary.'
+  #   default: true
+  token:
+      description: Used to pull Odin distributions from its GitHub releases, this is typically not supplied by the user. When running this action on github.com, the default value is sufficient. When running on GHES, you can pass a personal access token for github.com if you are experiencing rate limiting.
+      default: ${{ github.server_url == 'https://github.com' && github.token || '' }}
+# outputs:
+  # cache-hit:
+  #   description: 'A boolean value to indicate if a cache was hit'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
+  # post: 'dist/cache-save/index.js'
+  # post-if: success()
