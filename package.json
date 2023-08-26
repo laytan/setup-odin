@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/laytan/setup-odin#readme",
   "dependencies": {
+    "@actions/cache": "^3.2.2",
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1"
   },

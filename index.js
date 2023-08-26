@@ -1,17 +1,18 @@
 const core = require('@actions/core');
 const exec = require('@actions/exec');
+const cache = require('@actions/cache');
 
-const fs = require('fs/promises');
 const path = require('path');
 const os = require('os');
 
 // most @actions toolkit packages have async methods
 async function run() {
   try {
-    const odinVersion = core.getInput('odin-version');
-    const llvmVersion = core.getInput('llvm-version');
-    const buildType   = core.getInput('build-type');
-    const repository  = core.getInput('repository');
+    const odinVersion  = core.getInput('odin-version');
+    const llvmVersion  = core.getInput('llvm-version');
+    const buildType    = core.getInput('build-type');
+    const repository   = core.getInput('repository');
+    const cacheEnabled = core.getInput('cache');
 
     if (!['', 'debug', 'release', 'release_native'].includes(buildType)) {
       throw new Error(`Given build-type "${buildType}" is not supported, use "debug", "release" or "release_native"`);
@@ -23,15 +24,35 @@ async function run() {
 
     // TODO:
     // - caching
+    //  - cache llvm seperately from odin
     // - nightly
     // - commit hashes
     // - if no need to build from source, don't
     // - use odin fork
 
-    const [odinPath, ] = await Promise.all([
-      pullOdin(repository, odinVersion),
-      pullOdinBuildDependencies(llvmVersion),
-    ]);
+    const odinPath  = await pullOdin(repository, odinVersion);
+    const timestamp = await lastCommitTimestamp(odinPath);
+  
+    if (cacheEnabled) {
+      if (cache.isFeatureAvailable()) {
+        const key = `${repository}-${odinVersion}-${buildType}-llvm_${llvmVersion}-${timestamp}`;
+        const restoredKey = await cache.restoreCache([odinPath], key);
+        if (key === restoredKey) {
+          core.info('Cache HIT');
+          core.addPath(odinPath);
+          core.info('Successfully set up Odin compiler');
+          return;
+        } else {
+          core.info('Cache MISS');
+        }
+      } else {
+        core.warning('Caching feature is not available');
+      }
+    } else {
+      core.info('Caching is disabled');
+    }
+
+    await pullOdinBuildDependencies(llvmVersion);
 
     let buildExitCode;
     switch (os.platform()) {
@@ -67,7 +88,7 @@ async function run() {
   */
 async function pullOdin(repository, version) {
   const odinPath = path.join(
-    await fs.realpath(os.tmpdir()),
+    os.homedir(),
     'odin',
   );
 
@@ -87,6 +108,38 @@ async function pullOdin(repository, version) {
   }
 
   return odinPath;
+}
+
+/**
+  * @param path {string} The path to the repository to check.
+  *
+  * @return {Promise<string>} The last commit timestamp (current branch) in ISO-8601 format.
+  */
+async function lastCommitTimestamp(path) {
+  let timestamp;
+  const code = await exec.exec(
+    'git',
+    [
+      'log',
+      '--oneline',
+      "--pretty=format:'%ci'",
+      '--max-count=1',
+    ],
+    {
+      cwd: path,
+      listeners: {
+        stdline: (line) => {
+          timestamp = line;
+        },
+      },
+    },
+  );
+
+  if (code != 0) {
+    throw new Error(`Invoking git log for the latest commit timestamp failed with code: ${code}`);
+  }
+
+  return timestamp;
 }
 
 /**
