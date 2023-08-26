@@ -71,6 +71,22 @@ function cacheCheck(i) {
   return true;
 }
 
+/**
+ * @param i {Inputs}
+ *
+ * @return {string[]}
+ */
+function cachePaths(i) {
+  const paths = [odinPath()];
+
+  const platform = os.platform();
+  if (platform == 'darwin') {
+    paths.push(`/usr/local/opt/llvm@${i.llvmVersion}`);
+  }
+
+  return paths;
+}
+
 let _cachedOdinPath;
 
 /**
@@ -127,4 +143,5 @@ module.exports = {
   cacheCheck,
   odinPath,
   lastCommitTimestamp,
+  cachePaths,
 };

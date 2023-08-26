@@ -58222,6 +58222,22 @@ function cacheCheck(i) {
   return true;
 }
 
+/**
+ * @param i {Inputs}
+ *
+ * @return {string[]}
+ */
+function cachePaths(i) {
+  const paths = [odinPath()];
+
+  const platform = os.platform();
+  if (platform == 'darwin') {
+    paths.push(`/usr/local/opt/llvm@${i.llvmVersion}`);
+  }
+
+  return paths;
+}
+
 let _cachedOdinPath;
 
 /**
@@ -58278,6 +58294,7 @@ module.exports = {
   cacheCheck,
   odinPath,
   lastCommitTimestamp,
+  cachePaths,
 };
 
 
@@ -58524,7 +58541,7 @@ async function run() {
     if (common.cacheCheck(inputs)) {
       await pullOdin(inputs.repository, inputs.odinVersion);
       const key = common.composeCacheKey(inputs);
-      const restoredKey = await cache.restoreCache([odinPath], key);
+      const restoredKey = await cache.restoreCache(common.cachePaths(inputs), key);
 
       if (key === restoredKey) {
         core.info('Cache HIT');

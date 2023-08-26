@@ -46,6 +46,7 @@ jobs:
     - uses: ./
       with:
         odin-version: ${{ matrix.odin-version }}
+        llvm-version: 14
     - name: Version
       run: odin version
     - name: Report

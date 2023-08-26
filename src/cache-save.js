@@ -11,7 +11,7 @@ async function run() {
     }
   
     const key = common.composeCacheKey(inputs);
-    await cache.saveCache([common.odinPath()], key);
+    await cache.saveCache([common.cachePaths(inputs)], key);
     core.info('Saved Odin in cache');
   } catch (error) {
     core.setFailed(error.message);
