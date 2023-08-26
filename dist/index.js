@@ -4136,10 +4136,10 @@ async function run() {
 
     // TODO: some temp dir.
 
-    const odinPath = path.join([
+    const odinPath = path.join(
       await fs.realpath(os.tmpdir()),
       'odin',
-    ]);
+    );
 
     const gitExitCode = await exec.exec('git', [
       'clone',
