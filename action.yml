@@ -21,11 +21,11 @@ inputs:
   cache:
     description: 'Enables caching the compiler binary.'
     default: 'true'
-# outputs:
-  # cache-hit:
-  #   description: 'A boolean value to indicate if a cache was hit'
+outputs:
+  cache-hit:
+    description: 'A boolean value to indicate if a cache was hit'
 runs:
   using: 'node20'
-  main: 'dist/index.js'
-  # post: 'dist/cache-save/index.js'
-  # post-if: success()
+  main: 'dist/setup/index.js'
+  post: 'dist/cache-save/index.js'
+  post-if: success()
