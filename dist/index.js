@@ -4169,7 +4169,6 @@ async function run() {
         pkgsExitCode = await exec.exec('sudo', [
           'apt-get',
           'install',
-          '-Y',
           'llvm-11',
           'clang-11',
         ]);
