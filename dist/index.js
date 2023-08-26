@@ -4163,6 +4163,7 @@ async function run() {
           'install',
           'llvm@14',
         ]);
+        core.addPath('/usr/local/opt/llvm@14/bin');
         break;
     case 'linux':
         pkgsExitCode = await exec.exec('sudo', [
