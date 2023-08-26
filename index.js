@@ -9,31 +9,40 @@ const os = require('os');
 async function run() {
   try {
     const odinVersion = core.getInput('odin-version');
+    const llvmVersion = core.getInput('llvm-version');
+    const buildType   = core.getInput('build-type');
+    const repository  = core.getInput('repository');
+
+    if (!['', 'debug', 'release', 'release_native'].includes(buildType)) {
+      throw new Error(`Given build-type "${buildType}" is not supported, use "debug", "release" or "release_native"`);
+    }
+
+    if (!['11', '12', '13', '14'].includes(llvmVersion)) {
+      throw new Error(`Given llvm-version "${llvmVersion}" is not supported, use "11", "12", "13" or "14"`);
+    }
 
     // TODO:
     // - caching
     // - nightly
     // - commit hashes
     // - if no need to build from source, don't
-    // - build option, release|release_native|debug
     // - use odin fork
-    // - do git clone and package install in parallel
 
     const [odinPath, ] = await Promise.all([
-      pullOdin(odinVersion),
-      pullOdinBuildDependencies(12),
+      pullOdin(repository, odinVersion),
+      pullOdinBuildDependencies(llvmVersion),
     ]);
 
     let buildExitCode;
     switch (os.platform()) {
       case 'darwin':
       case 'linux':
-        buildExitCode = await exec.exec('./build_odin.sh', undefined, {
+        buildExitCode = await exec.exec('./build_odin.sh', [buildType], {
           cwd: odinPath,
         });
         break;
       case 'win32':
-        buildExitCode = await exec.exec('./build.bat', undefined, {
+        buildExitCode = await exec.exec('./build.bat', [buildType], {
           cwd: odinPath,
         });
         break;
@@ -51,11 +60,12 @@ async function run() {
 }
 
 /**
+  * @param repository {string} The git repository to find Odin.
   * @param version {string} The version of Odin to pull.
   *
   * @return {Promise<string>} The directory that Odin is pulled into.
   */
-async function pullOdin(version) {
+async function pullOdin(repository, version) {
   const odinPath = path.join(
     await fs.realpath(os.tmpdir()),
     'odin',
@@ -63,7 +73,7 @@ async function pullOdin(version) {
 
   const code = await exec.exec('git', [
     'clone',
-    'https://github.com/odin-lang/Odin',
+    repository,
     odinPath,
     '--branch',
     version,
@@ -73,7 +83,7 @@ async function pullOdin(version) {
   ]);
 
   if (code !== 0) {
-    throw new Error(`Git clone failed with exit code: ${code}`);
+    throw new Error(`Git clone failed with exit code: ${code}, are you sure that version exists?`);
   }
 
   return odinPath;
