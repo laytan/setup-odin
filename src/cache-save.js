@@ -10,7 +10,7 @@ async function run() {
       return;
     }
   
-    const key = common.composeCacheKey(inputs);
+    const key = await common.composeCacheKey(inputs);
     await cache.saveCache([common.cachePaths(inputs)], key);
     core.info('Saved Odin in cache');
   } catch (error) {

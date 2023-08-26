@@ -21,7 +21,7 @@ async function run() {
 
     if (common.cacheCheck(inputs)) {
       await pullOdin(inputs.repository, inputs.odinVersion);
-      const key = common.composeCacheKey(inputs);
+      const key = await common.composeCacheKey(inputs);
       const restoredKey = await cache.restoreCache(common.cachePaths(inputs), key);
 
       if (key === restoredKey) {

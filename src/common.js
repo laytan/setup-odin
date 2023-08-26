@@ -44,11 +44,11 @@ function getInputs() {
 /**
  * @param i {Inputs}
  *
- * @return {string}
+ * @return {Promise<string>}
  */
-function composeCacheKey(i) {
+async function composeCacheKey(i) {
   const path = odinPath();
-  const timestamp = lastCommitTimestamp(path);
+  const timestamp = await lastCommitTimestamp(path);
   return `${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}-${timestamp}`;
 }
 
@@ -82,6 +82,9 @@ function cachePaths(i) {
   const platform = os.platform();
   if (platform == 'darwin') {
     paths.push(`/usr/local/opt/llvm@${i.llvmVersion}`);
+    paths.push(`/usr/local/Cellar/llvm@${i.llvmVersion}`);
+  } else if (platform == 'linux') {
+    paths.push(`/usr/lib/llvm-${i.llvmVersion}`);
   }
 
   return paths;
