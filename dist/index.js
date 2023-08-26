@@ -4133,55 +4133,12 @@ async function run() {
     // - if no need to build from source, don't
     // - build option, release|release_native|debug
     // - use odin fork
+    // - do git clone and package install in parallel
 
-    // TODO: some temp dir.
-
-    const odinPath = path.join(
-      await fs.realpath(os.tmpdir()),
-      'odin',
-    );
-
-    const gitExitCode = await exec.exec('git', [
-      'clone',
-      'https://github.com/odin-lang/Odin',
-      odinPath,
-      '--branch',
-      odinVersion,
-      '--depth=1',
-      '--single-branch',
-      '--no-tags',
+    const [odinPath, ] = await Promise.all([
+      pullOdin(odinVersion),
+      pullOdinBuildDependencies(12),
     ]);
-    // TODO: capture stderr.
-    if (gitExitCode !== 0) {
-      throw new Error(`Git clone failed with exit code: ${gitExitCode}`);
-    }
-  
-    let pkgsExitCode;
-    switch (os.platform()) {
-    case 'darwin':
-        pkgsExitCode = await exec.exec('brew', [
-          'install',
-          'llvm@14',
-        ]);
-        core.addPath('/usr/local/opt/llvm@14/bin');
-        break;
-    case 'linux':
-        pkgsExitCode = await exec.exec('sudo', [
-          'apt-get',
-          'install',
-          'llvm-11',
-          'clang-11',
-        ]);
-        break;
-    case 'win32':
-        pkgsExitCode = 0;
-        break;
-    default:
-        throw new Error(`Operating system ${os.platform()} is not supported by setup-odin`);
-    }
-    if (pkgsExitCode !== 0) {
-      throw new Error(`Installing Odin dependencies failed with exit code: ${pkgsExitCode}`);
-    }
 
     let buildExitCode;
     switch (os.platform()) {
@@ -4206,6 +4163,70 @@ async function run() {
     core.info('Successfully set up Odin compiler');
   } catch (error) {
     core.setFailed(error.message);
+  }
+}
+
+/**
+  * @param version {string} The version of Odin to pull.
+  *
+  * @return {Promise<string>} The directory that Odin is pulled into.
+  */
+async function pullOdin(version) {
+  const odinPath = path.join(
+    await fs.realpath(os.tmpdir()),
+    'odin',
+  );
+
+  const code = await exec.exec('git', [
+    'clone',
+    'https://github.com/odin-lang/Odin',
+    odinPath,
+    '--branch',
+    version,
+    '--depth=1',
+    '--single-branch',
+    '--no-tags',
+  ]);
+
+  if (code !== 0) {
+    throw new Error(`Git clone failed with exit code: ${code}`);
+  }
+
+  return odinPath;
+}
+
+/**
+  * @param llvm {string} The version of LLVM to pull.
+  *
+  * @return Promise<void>
+  */
+async function pullOdinBuildDependencies(llvm) {
+  let code;
+  switch (os.platform()) {
+  case 'darwin':
+      code = await exec.exec('brew', [
+        'install',
+        `llvm@${llvm}`,
+      ]);
+      core.addPath(`/usr/local/opt/llvm@${llvm}/bin`);
+      break;
+  case 'linux':
+      code = await exec.exec('sudo', [
+        'apt-get',
+        'install',
+        `llvm-${llvm}`,
+        `clang-${llvm}`,
+      ]);
+      break;
+  case 'win32':
+      code = 0;
+      break;
+  default:
+      throw new Error(`Operating system ${os.platform()} is not supported by setup-odin`);
+  }
+
+  if (code !== 0) {
+    throw new Error(`Installing Odin dependencies failed with exit code: ${code}`);
   }
 }
 
