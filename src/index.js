@@ -41,10 +41,10 @@ async function run() {
       case 'linux':
         buildExitCode = await exec.exec('./build_odin.sh', [inputs.buildType], {
           cwd: odinPath,
-          env: {
-            'LLVM_CONFIG': `llvm-config-${inputs.llvmVersion}`,
-            'CXX':         `clang++-${inputs.llvmVersion}`,
-          },
+          // env: {
+          //   'LLVM_CONFIG': `llvm-config-${inputs.llvmVersion}`,
+          //   'CXX':         `clang++-${inputs.llvmVersion}`,
+          // },
         });
         break;
       case 'win32':
@@ -103,10 +103,9 @@ async function pullOdinBuildDependencies(llvm) {
       break;
   case 'linux':
       code = await exec.exec('sudo', [
-        'apt-get',
+        'apt-fast',
         'install',
-        'binutils',
-        `llvm-${llvm}`,
+        `llvm-${llvm}-dev`,
         `clang-${llvm}`,
       ]);
       break;
