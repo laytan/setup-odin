@@ -86,6 +86,7 @@ async function restoreCache(inputs, odinPath) {
   }
   
   core.info('Cache MISS');
+  await pullOdin(inputs.repository, inputs.odinVersion);
   return false;
 }
 
