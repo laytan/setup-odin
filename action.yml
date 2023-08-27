@@ -7,7 +7,7 @@ inputs:
     default: 'master'
     required: true
   llvm-version:
-    description: 'Which version of LLVM to install, supports 11, 12, 13 and 14 (14 is recommended as this is pre-installed by GitHub)'
+    description: 'Which version of LLVM to install, supports 11, 12, 13 and 14, this option has no effect on Windows (14 is recommended as this is pre-installed by GitHub)'
     default: '14'
     required: true
   build-type:

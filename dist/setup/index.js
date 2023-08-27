@@ -58475,8 +58475,10 @@ var __webpack_exports__ = {};
 const exec = __nccwpck_require__(1514);
 const core = __nccwpck_require__(2186);
 const cache = __nccwpck_require__(7799);
+const io = __nccwpck_require__(7351);
 
 const os = __nccwpck_require__(2037);
+const fs = __nccwpck_require__(7147);
 
 const common = __nccwpck_require__(5010);
 
@@ -58617,24 +58619,39 @@ async function pullUpdates(path, version) {
 async function pullOdinBuildDependencies(llvm) {
   let code;
   switch (os.platform()) {
-  case 'darwin':
+  case 'darwin': {
+      const path = `/usr/local/opt/llvm@${llvm}/bin`;
+
+      core.addPath(path);
+      if (fs.existsSync(path)) {
+        core.info(`LLVM ${llvm} comes pre-installed on this runner`);
+        return;
+      }
+
       code = await exec.exec('brew', [
         'install',
         `llvm@${llvm}`,
       ]);
-      core.addPath(`/usr/local/opt/llvm@${llvm}/bin`);
       break;
-  case 'linux':
-      code = await exec.exec('sudo', [
-        'apt-fast',
-        'install',
-        `llvm-${llvm}-dev`,
-        `clang-${llvm}`,
-      ]);
+  }
+  case 'linux': {
+      await io.which(`llvm-${llvm}`)
+        .then(() => {
+          core.info(`LLVM ${llvm} comes pre-installed on this runner`);
+          code = 0;
+        })
+        .catch(async () => {
+          code = await exec.exec('sudo', [
+            'apt-fast',
+            'install',
+            `llvm-${llvm}-dev`,
+            `clang-${llvm}`,
+          ]);
+        });
       break;
+  }
   case 'win32':
-      code = 0;
-      break;
+      return;
   default:
       throw new Error(`Operating system ${os.platform()} is not supported by setup-odin`);
   }
