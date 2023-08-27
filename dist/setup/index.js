@@ -58200,7 +58200,7 @@ function getInputs() {
 async function composeCacheKey(i) {
   const path = odinPath();
   const timestamp = await lastCommitTimestamp(path);
-  return `${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}-${timestamp}`;
+  return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}-${timestamp}`;
 }
 
 /**
@@ -58253,7 +58253,7 @@ function odinPath() {
  * @return {Promise<string>} The last commit timestamp (current branch) in ISO-8601 format.
  */
 async function lastCommitTimestamp(path) {
-  let timestamp;
+  let timestamp = '';
   const code = await exec.exec(
     'git',
     [
@@ -58265,8 +58265,8 @@ async function lastCommitTimestamp(path) {
     {
       cwd: path,
       listeners: {
-        stdline: (line) => {
-          timestamp = line;
+        stdout: (data) => {
+          timestamp += data.toString();
         },
       },
     },
@@ -58276,6 +58276,7 @@ async function lastCommitTimestamp(path) {
     throw new Error(`Invoking git log for the latest commit timestamp failed with code: ${code}`);
   }
 
+  core.info(`Last commit for this version was on: ${timestamp}`);
   return timestamp;
 }
 
