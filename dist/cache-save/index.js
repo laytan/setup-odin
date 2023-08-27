@@ -58514,7 +58514,7 @@ async function run() {
     }
 
     if (os.platform() === 'darwin') {
-      if (core.getState('darwin-cache-hit' !== 'true')) {
+      if (core.getState('darwin-cache-hit') !== 'true') {
         promises.push(async () => {
           await cache.saveCache([common.darwinCachePaths(inputs)], common.darwinCacheKey(inputs));
           core.info('Saved darwin LLVM in cache');

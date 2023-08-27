@@ -58560,24 +58560,25 @@ async function run() {
  */
 async function restoreCache(inputs, odinPath) {
   const key = common.mainCacheKey(inputs);
-  const restoredKey = await cache.restoreCache([odinPath], key);
+  core.info(`Main cache key: ${key}`);
 
+  const restoredKey = await cache.restoreCache([odinPath], key);
   if (key === restoredKey) {
-    core.info('Cache HIT, checking if it is still up-to-date');
+    core.info('Main cache HIT, checking if it is still up-to-date');
 
     if (await pullUpdates(odinPath, inputs.odinVersion)) {
-      core.info('Cache is still up-to-date');
+      core.info('Main cache is still up-to-date');
       core.setOutput('cache-hit', true);
       core.saveState('cache-hit', 'true');
       core.info('Successfully set up Odin compiler');
       return true;
     }
 
-    core.info('Cache is not up-to-date, rebuilding the compiler now');
+    core.info('Main cache is not up-to-date, rebuilding the compiler now');
     return false;
   }
   
-  core.info('Cache MISS');
+  core.info('Main cache MISS');
   await pullOdin(inputs.repository, inputs.odinVersion);
   return false;
 }
@@ -58641,10 +58642,13 @@ async function pullOdinBuildDependencies(inputs) {
   switch (platform) {
   case 'darwin': {
       if (common.cacheCheck(inputs)) {
-        if (await cache.restoreCache(common.darwinCachePaths(inputs), common.darwinCacheKey(inputs))) {
-          core.info('Got LLVM install caches');
+        const key = common.darwinCacheKey(inputs);
+        core.info(`LLVM/Brew cache key: ${key}`);
+        if ((await cache.restoreCache(common.darwinCachePaths(inputs), key)) === key) {
+          core.info('Got LLVM/Brew install caches');
           core.saveState('darwin-cache-hit', 'true');
         } else {
+          core.info('Cache MISS on LLVM/Brew install caches');
           core.saveState('darwin-cache-hit', 'false');
         }
       }
