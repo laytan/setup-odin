@@ -20,13 +20,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        odin-version: [master, dev-2023-08]
+        llvm-version: [13, 14]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - uses: ./
       with:
-        odin-version: ${{ matrix.odin-version }}
+        llvm-version: ${{ matrix.llvm-version }}
         cache: false
     - name: Version
       run: odin version
