@@ -58223,22 +58223,10 @@ function cacheCheck(i) {
 }
 
 /**
- * @param i {Inputs}
- *
  * @return {string[]}
  */
-function cachePaths(i) {
-  const paths = [odinPath()];
-
-  const platform = os.platform();
-  if (platform == 'darwin') {
-    paths.push(`/usr/local/opt/llvm@${i.llvmVersion}`);
-    paths.push(`/usr/local/Cellar/llvm@${i.llvmVersion}`);
-  } else if (platform == 'linux') {
-    paths.push(`/usr/lib/llvm-${i.llvmVersion}`);
-  }
-
-  return paths;
+function cachePaths() {
+  return [odinPath()];
 }
 
 let _cachedOdinPath;
@@ -58533,7 +58521,7 @@ async function run() {
     }
   
     const key = await common.composeCacheKey(inputs);
-    await cache.saveCache([common.cachePaths(inputs)], key);
+    await cache.saveCache([common.cachePaths()], key);
     core.info('Saved Odin in cache');
   } catch (error) {
     core.setFailed(error.message);

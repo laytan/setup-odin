@@ -58223,22 +58223,10 @@ function cacheCheck(i) {
 }
 
 /**
- * @param i {Inputs}
- *
  * @return {string[]}
  */
-function cachePaths(i) {
-  const paths = [odinPath()];
-
-  const platform = os.platform();
-  if (platform == 'darwin') {
-    paths.push(`/usr/local/opt/llvm@${i.llvmVersion}`);
-    paths.push(`/usr/local/Cellar/llvm@${i.llvmVersion}`);
-  } else if (platform == 'linux') {
-    paths.push(`/usr/lib/llvm-${i.llvmVersion}`);
-  }
-
-  return paths;
+function cachePaths() {
+  return [odinPath()];
 }
 
 let _cachedOdinPath;
@@ -58532,36 +58520,34 @@ const common = __nccwpck_require__(5010);
 async function run() {
   try {
     const inputs = common.getInputs();
+
     const odinPath = common.odinPath();
+    core.addPath(odinPath);
 
     // TODO:
-    // - caching
-    //  - cache llvm seperately from odin
+    // - caching llvm
     // - nightly
     // - commit hashes
     // - if no need to build from source, don't
 
+    await Promise.all([
+      pullOdin(inputs.repository, inputs.odinVersion),
+      pullOdinBuildDependencies(inputs.llvmVersion),
+    ]);
+
     if (common.cacheCheck(inputs)) {
-      await pullOdin(inputs.repository, inputs.odinVersion);
       const key = await common.composeCacheKey(inputs);
-      const restoredKey = await cache.restoreCache(common.cachePaths(inputs), key);
+      const restoredKey = await cache.restoreCache(common.cachePaths(), key);
 
       if (key === restoredKey) {
         core.info('Cache HIT');
         core.setOutput('cache-hit', true);
-        core.addPath(odinPath);
         core.info('Successfully set up Odin compiler');
         return;
       }
-
-      await pullOdinBuildDependencies(inputs.llvmVersion);
-    } else {
-      await Promise.all([
-        pullOdin(inputs.repository, inputs.odinVersion),
-        pullOdinBuildDependencies(inputs.llvmVersion),
-      ]);
     }
 
+    core.info('Cache MISS');
     core.setOutput('cache-hit', false);
   
     let buildExitCode;
@@ -58581,8 +58567,6 @@ async function run() {
     if (buildExitCode !== 0) {
       throw new Error(`Building Odin failed with exit code: ${buildExitCode}`);
     }
-
-    core.addPath(odinPath);
 
     core.info('Successfully set up Odin compiler');
   } catch (error) {
