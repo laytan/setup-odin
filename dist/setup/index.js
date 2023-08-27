@@ -58552,11 +58552,11 @@ async function restoreCache(inputs, odinPath) {
       core.setOutput('cache-hit', true);
       core.saveState('cache-hit', 'true');
       core.info('Successfully set up Odin compiler');
-      return;
+      return true;
     }
 
     core.info('Cache is not up-to-date, rebuilding the compiler now');
-    return true;
+    return false;
   }
   
   core.info('Cache MISS');
