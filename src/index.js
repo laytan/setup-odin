@@ -146,9 +146,6 @@ async function pullOdinBuildDependencies(llvm) {
   switch (os.platform()) {
   case 'darwin': {
       core.addPath(`/usr/local/opt/llvm@${llvm}/bin`);
-
-      await exec.exec('brew', ['list']);
-
       code = await exec.exec('brew', [
         'install',
         `llvm@${llvm}`,
