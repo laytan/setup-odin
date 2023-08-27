@@ -17,7 +17,7 @@ steps:
   - uses: laytan/setup-odin@v1
     # with:
       # odin-version: master
-      # llvm-version: 12
+      # llvm-version: 14
       # build-type: debug
       # repository: https://github.com/odin-lang/Odin
       # cache: true
