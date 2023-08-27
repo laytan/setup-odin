@@ -113,6 +113,7 @@ async function lastCommitTimestamp(path) {
     ],
     {
       cwd: path,
+      outStream: null, // Don't need the log line to be in the action logs.
       listeners: {
         stdout: (data) => {
           timestamp += data.toString();

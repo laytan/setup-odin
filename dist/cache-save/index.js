@@ -58264,6 +58264,7 @@ async function lastCommitTimestamp(path) {
     ],
     {
       cwd: path,
+      outStream: null, // Don't need the log line to be in the action logs.
       listeners: {
         stdout: (data) => {
           timestamp += data.toString();
@@ -58518,6 +58519,11 @@ async function run() {
   try {
     const inputs = common.getInputs();
     if (!common.cacheCheck(inputs)) {
+      return;
+    }
+
+    if (core.getState('cache-hit') === 'true') {
+      core.info('Cache was hit, not saving it again');
       return;
     }
   

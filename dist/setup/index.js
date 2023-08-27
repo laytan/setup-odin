@@ -58264,6 +58264,7 @@ async function lastCommitTimestamp(path) {
     ],
     {
       cwd: path,
+      outStream: null, // Don't need the log line to be in the action logs.
       listeners: {
         stdout: (data) => {
           timestamp += data.toString();
@@ -58537,6 +58538,7 @@ async function run() {
       if (key === restoredKey) {
         core.info('Cache HIT');
         core.setOutput('cache-hit', true);
+        core.saveState('cache-hit', 'true');
         core.info('Successfully set up Odin compiler');
         return;
       }

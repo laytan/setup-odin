@@ -9,6 +9,11 @@ async function run() {
     if (!common.cacheCheck(inputs)) {
       return;
     }
+
+    if (core.getState('cache-hit') === 'true') {
+      core.info('Cache was hit, not saving it again');
+      return;
+    }
   
     const key = await common.composeCacheKey(inputs);
     await cache.saveCache([common.cachePaths()], key);
