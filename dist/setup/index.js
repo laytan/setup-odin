@@ -58640,11 +58640,13 @@ async function pullOdinBuildDependencies(inputs) {
   const platform = os.platform();
   switch (platform) {
   case 'darwin': {
-      if (await cache.restoreCache(common.darwinCachePaths(inputs), common.darwinCacheKey(inputs))) {
-        core.info('Got LLVM install caches');
-        core.saveState('darwin-cache-hit', 'true');
-      } else {
-        core.saveState('darwin-cache-hit', 'false');
+      if (common.cacheCheck(inputs)) {
+        if (await cache.restoreCache(common.darwinCachePaths(inputs), common.darwinCacheKey(inputs))) {
+          core.info('Got LLVM install caches');
+          core.saveState('darwin-cache-hit', 'true');
+        } else {
+          core.saveState('darwin-cache-hit', 'false');
+        }
       }
 
       code = await exec.exec('brew', [
