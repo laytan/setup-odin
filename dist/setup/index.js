@@ -58151,6 +58151,7 @@ module.exports.implForWrapper = function (wrapper) {
 
 const core = __nccwpck_require__(2186);
 const cache = __nccwpck_require__(7799);
+const exec = __nccwpck_require__(1514);
 
 const path = __nccwpck_require__(1017);
 const os = __nccwpck_require__(2037);
@@ -58220,10 +58221,21 @@ function cacheCheck(i) {
 }
 
 /**
- * @return {string[]}
+ * @param inputs {Inputs}
+ *
+ * @return {Promise<string[]>}
  */
-function cachePaths() {
-  return [odinPath()];
+async function cachePaths(inputs) {
+  const paths = [odinPath()];
+
+  if (os.platform() === 'darwin') {
+    const cachePath = (await exec.getExecOutput('brew', ['--cache'])).stdout;
+    paths.push(`${cachePath}/llvm@${inputs.llvmVersion}--*`);
+    paths.push(`${cachePath}/downloads/*--llvm@${inputs.llvmVersion}-*`);
+  }
+
+  core.info(`Caching: ${paths.join(', ')}`);
+  return paths;
 }
 
 let _cachedOdinPath;
@@ -58544,7 +58556,10 @@ async function run() {
  */
 async function restoreCache(inputs, odinPath) {
   const key = common.composeCacheKey(inputs);
-  const restoredKey = await cache.restoreCache(common.cachePaths(), key);
+  const restoredKey = await cache.restoreCache(
+    await common.cachePaths(inputs),
+    key,
+  );
   if (key === restoredKey) {
     core.info('Cache HIT, checking if it is still up-to-date');
 
@@ -58620,9 +58635,6 @@ async function pullOdinBuildDependencies(llvm) {
   switch (os.platform()) {
   case 'darwin': {
       core.addPath(`/usr/local/opt/llvm@${llvm}/bin`);
-
-      await exec.exec('brew', ['list']);
-
       code = await exec.exec('brew', [
         'install',
         `llvm@${llvm}`,

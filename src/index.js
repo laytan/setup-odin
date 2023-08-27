@@ -70,7 +70,10 @@ async function run() {
  */
 async function restoreCache(inputs, odinPath) {
   const key = common.composeCacheKey(inputs);
-  const restoredKey = await cache.restoreCache(common.cachePaths(), key);
+  const restoredKey = await cache.restoreCache(
+    await common.cachePaths(inputs),
+    key,
+  );
   if (key === restoredKey) {
     core.info('Cache HIT, checking if it is still up-to-date');
 

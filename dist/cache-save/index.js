@@ -58151,6 +58151,7 @@ module.exports.implForWrapper = function (wrapper) {
 
 const core = __nccwpck_require__(2186);
 const cache = __nccwpck_require__(7799);
+const exec = __nccwpck_require__(1514);
 
 const path = __nccwpck_require__(1017);
 const os = __nccwpck_require__(2037);
@@ -58220,10 +58221,21 @@ function cacheCheck(i) {
 }
 
 /**
- * @return {string[]}
+ * @param inputs {Inputs}
+ *
+ * @return {Promise<string[]>}
  */
-function cachePaths() {
-  return [odinPath()];
+async function cachePaths(inputs) {
+  const paths = [odinPath()];
+
+  if (os.platform() === 'darwin') {
+    const cachePath = (await exec.getExecOutput('brew', ['--cache'])).stdout;
+    paths.push(`${cachePath}/llvm@${inputs.llvmVersion}--*`);
+    paths.push(`${cachePath}/downloads/*--llvm@${inputs.llvmVersion}-*`);
+  }
+
+  core.info(`Caching: ${paths.join(', ')}`);
+  return paths;
 }
 
 let _cachedOdinPath;
@@ -58490,7 +58502,7 @@ async function run() {
     }
   
     const key = common.composeCacheKey(inputs);
-    await cache.saveCache([common.cachePaths()], key);
+    await cache.saveCache(await common.cachePaths(inputs), key);
     core.info('Saved Odin in cache');
   } catch (error) {
     core.setFailed(error.message);

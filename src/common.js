@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const cache = require('@actions/cache');
+const exec = require('@actions/exec');
 
 const path = require('path');
 const os = require('os');
@@ -69,10 +70,21 @@ function cacheCheck(i) {
 }
 
 /**
- * @return {string[]}
+ * @param inputs {Inputs}
+ *
+ * @return {Promise<string[]>}
  */
-function cachePaths() {
-  return [odinPath()];
+async function cachePaths(inputs) {
+  const paths = [odinPath()];
+
+  if (os.platform() === 'darwin') {
+    const cachePath = (await exec.getExecOutput('brew', ['--cache'])).stdout;
+    paths.push(`${cachePath}/llvm@${inputs.llvmVersion}--*`);
+    paths.push(`${cachePath}/downloads/*--llvm@${inputs.llvmVersion}-*`);
+  }
+
+  core.info(`Caching: ${paths.join(', ')}`);
+  return paths;
 }
 
 let _cachedOdinPath;
