@@ -58151,7 +58151,6 @@ module.exports.implForWrapper = function (wrapper) {
 
 const core = __nccwpck_require__(2186);
 const cache = __nccwpck_require__(7799);
-const exec = __nccwpck_require__(1514);
 
 const path = __nccwpck_require__(1017);
 const os = __nccwpck_require__(2037);
@@ -58195,12 +58194,10 @@ function getInputs() {
 /**
  * @param i {Inputs}
  *
- * @return {Promise<string>}
+ * @return {string}
  */
-async function composeCacheKey(i) {
-  const path = odinPath();
-  const timestamp = await lastCommitTimestamp(path);
-  return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}-${timestamp}`;
+function composeCacheKey(i) {
+  return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}`;
 }
 
 /**
@@ -58247,46 +58244,11 @@ function odinPath() {
   return _cachedOdinPath;
 }
 
-/**
- * @param path {string} The path to the repository to check.
- *
- * @return {Promise<string>} The last commit timestamp (current branch) in ISO-8601 format.
- */
-async function lastCommitTimestamp(path) {
-  let timestamp = '';
-  const code = await exec.exec(
-    'git',
-    [
-      'log',
-      '--oneline',
-      "--pretty=format:'%ci'",
-      '--max-count=1',
-    ],
-    {
-      cwd: path,
-      outStream: null, // Don't need the log line to be in the action logs.
-      listeners: {
-        stdout: (data) => {
-          timestamp += data.toString();
-        },
-      },
-    },
-  );
-
-  if (code != 0) {
-    throw new Error(`Invoking git log for the latest commit timestamp failed with code: ${code}`);
-  }
-
-  core.info(`Last commit for this version was on: ${timestamp}`);
-  return timestamp;
-}
-
 module.exports = {
   getInputs,
   composeCacheKey,
   cacheCheck,
   odinPath,
-  lastCommitTimestamp,
   cachePaths,
 };
 
@@ -58526,26 +58488,24 @@ async function run() {
     const odinPath = common.odinPath();
     core.addPath(odinPath);
 
-    await Promise.all([
-      pullOdin(inputs.repository, inputs.odinVersion),
-      pullOdinBuildDependencies(inputs.llvmVersion),
-    ]);
-
     if (common.cacheCheck(inputs)) {
-      const key = await common.composeCacheKey(inputs);
-      const restoredKey = await cache.restoreCache(common.cachePaths(), key);
+      const [cacheSuccess, ] = await Promise.all([
+        restoreCache(inputs, odinPath),
+        pullOdinBuildDependencies(inputs.llvmVersion),
+      ]);
 
-      if (key === restoredKey) {
-        core.info('Cache HIT');
-        core.setOutput('cache-hit', true);
-        core.saveState('cache-hit', 'true');
-        core.info('Successfully set up Odin compiler');
+      if (cacheSuccess) {
         return;
       }
+    } else {
+      await Promise.all([
+        pullOdin(inputs.repository, inputs.odinVersion),
+        pullOdinBuildDependencies(inputs.llvmVersion),
+      ]);
     }
 
-    core.info('Cache MISS');
     core.setOutput('cache-hit', false);
+    core.saveState('cache-hit', 'false');
   
     let buildExitCode;
     switch (os.platform()) {
@@ -58576,6 +58536,34 @@ async function run() {
 }
 
 /**
+ * @param inputs {common.Inputs}
+ * @param odinPath {string}
+ *
+ * @return {Promise<bool>} If the cache was hit.
+ */
+async function restoreCache(inputs, odinPath) {
+  const key = common.composeCacheKey(inputs);
+  const restoredKey = await cache.restoreCache(common.cachePaths(), key);
+  if (key === restoredKey) {
+    core.info('Cache HIT, checking if it is still up-to-date');
+
+    if (await pullUpdates(odinPath, inputs.odinVersion)) {
+      core.info('Cache is still up-to-date');
+      core.setOutput('cache-hit', true);
+      core.saveState('cache-hit', 'true');
+      core.info('Successfully set up Odin compiler');
+      return;
+    }
+
+    core.info('Cache is not up-to-date, rebuilding the compiler now');
+    return true;
+  }
+  
+  core.info('Cache MISS');
+  return false;
+}
+
+/**
   * @param repository {string} The git repository to find Odin.
   * @param version {string} The version of Odin to pull.
   *
@@ -58596,6 +58584,28 @@ async function pullOdin(repository, version) {
   if (code !== 0) {
     throw new Error(`Git clone failed with exit code: ${code}, are you sure that version exists?`);
   }
+}
+
+/**
+ * @param path {string} The path to the git repo.
+ * @param version {string} The version to check.
+ *
+ * @return {Promise<bool>} Whether it was already up-to-date.
+ */
+async function pullUpdates(path, version) {
+  const output = await exec.getExecOutput(
+    'git',
+    [
+      'pull',
+      'origin',
+      version,
+    ],
+    {
+      cwd: path,
+    },
+  );
+
+  return output.stdout.includes('Already up to date.');
 }
 
 /**

@@ -14,26 +14,24 @@ async function run() {
     const odinPath = common.odinPath();
     core.addPath(odinPath);
 
-    await Promise.all([
-      pullOdin(inputs.repository, inputs.odinVersion),
-      pullOdinBuildDependencies(inputs.llvmVersion),
-    ]);
-
     if (common.cacheCheck(inputs)) {
-      const key = await common.composeCacheKey(inputs);
-      const restoredKey = await cache.restoreCache(common.cachePaths(), key);
+      const [cacheSuccess, ] = await Promise.all([
+        restoreCache(inputs, odinPath),
+        pullOdinBuildDependencies(inputs.llvmVersion),
+      ]);
 
-      if (key === restoredKey) {
-        core.info('Cache HIT');
-        core.setOutput('cache-hit', true);
-        core.saveState('cache-hit', 'true');
-        core.info('Successfully set up Odin compiler');
+      if (cacheSuccess) {
         return;
       }
+    } else {
+      await Promise.all([
+        pullOdin(inputs.repository, inputs.odinVersion),
+        pullOdinBuildDependencies(inputs.llvmVersion),
+      ]);
     }
 
-    core.info('Cache MISS');
     core.setOutput('cache-hit', false);
+    core.saveState('cache-hit', 'false');
   
     let buildExitCode;
     switch (os.platform()) {
@@ -64,6 +62,34 @@ async function run() {
 }
 
 /**
+ * @param inputs {common.Inputs}
+ * @param odinPath {string}
+ *
+ * @return {Promise<bool>} If the cache was hit.
+ */
+async function restoreCache(inputs, odinPath) {
+  const key = common.composeCacheKey(inputs);
+  const restoredKey = await cache.restoreCache(common.cachePaths(), key);
+  if (key === restoredKey) {
+    core.info('Cache HIT, checking if it is still up-to-date');
+
+    if (await pullUpdates(odinPath, inputs.odinVersion)) {
+      core.info('Cache is still up-to-date');
+      core.setOutput('cache-hit', true);
+      core.saveState('cache-hit', 'true');
+      core.info('Successfully set up Odin compiler');
+      return;
+    }
+
+    core.info('Cache is not up-to-date, rebuilding the compiler now');
+    return true;
+  }
+  
+  core.info('Cache MISS');
+  return false;
+}
+
+/**
   * @param repository {string} The git repository to find Odin.
   * @param version {string} The version of Odin to pull.
   *
@@ -84,6 +110,28 @@ async function pullOdin(repository, version) {
   if (code !== 0) {
     throw new Error(`Git clone failed with exit code: ${code}, are you sure that version exists?`);
   }
+}
+
+/**
+ * @param path {string} The path to the git repo.
+ * @param version {string} The version to check.
+ *
+ * @return {Promise<bool>} Whether it was already up-to-date.
+ */
+async function pullUpdates(path, version) {
+  const output = await exec.getExecOutput(
+    'git',
+    [
+      'pull',
+      'origin',
+      version,
+    ],
+    {
+      cwd: path,
+    },
+  );
+
+  return output.stdout.includes('Already up to date.');
 }
 
 /**

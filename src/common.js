@@ -1,6 +1,5 @@
 const core = require('@actions/core');
 const cache = require('@actions/cache');
-const exec = require('@actions/exec');
 
 const path = require('path');
 const os = require('os');
@@ -44,12 +43,10 @@ function getInputs() {
 /**
  * @param i {Inputs}
  *
- * @return {Promise<string>}
+ * @return {string}
  */
-async function composeCacheKey(i) {
-  const path = odinPath();
-  const timestamp = await lastCommitTimestamp(path);
-  return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}-${timestamp}`;
+function composeCacheKey(i) {
+  return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}`;
 }
 
 /**
@@ -96,45 +93,10 @@ function odinPath() {
   return _cachedOdinPath;
 }
 
-/**
- * @param path {string} The path to the repository to check.
- *
- * @return {Promise<string>} The last commit timestamp (current branch) in ISO-8601 format.
- */
-async function lastCommitTimestamp(path) {
-  let timestamp = '';
-  const code = await exec.exec(
-    'git',
-    [
-      'log',
-      '--oneline',
-      "--pretty=format:'%ci'",
-      '--max-count=1',
-    ],
-    {
-      cwd: path,
-      outStream: null, // Don't need the log line to be in the action logs.
-      listeners: {
-        stdout: (data) => {
-          timestamp += data.toString();
-        },
-      },
-    },
-  );
-
-  if (code != 0) {
-    throw new Error(`Invoking git log for the latest commit timestamp failed with code: ${code}`);
-  }
-
-  core.info(`Last commit for this version was on: ${timestamp}`);
-  return timestamp;
-}
-
 module.exports = {
   getInputs,
   composeCacheKey,
   cacheCheck,
   odinPath,
-  lastCommitTimestamp,
   cachePaths,
 };
