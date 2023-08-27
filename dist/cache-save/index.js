@@ -58505,20 +58505,18 @@ async function run() {
     const promises = [];
 
     if (core.getState('cache-hit') !== 'true') {
-      promises.push((async () => {
-        await cache.saveCache([common.odinPath()], common.mainCacheKey(inputs));
-        core.info('Saved Odin in cache');
-      })());
+      promises.push(
+        cache.saveCache([common.odinPath()], common.mainCacheKey(inputs)),
+      );
     } else {
       core.info('Odin cache was hit, not saving it again');
     }
 
     if (os.platform() === 'darwin') {
       if (core.getState('darwin-cache-hit') !== 'true') {
-        promises.push((async () => {
-          await cache.saveCache(common.darwinCachePaths(inputs), common.darwinCacheKey(inputs));
-          core.info('Saved darwin LLVM in cache');
-        })());
+        promises.push(
+          cache.saveCache(common.darwinCachePaths(inputs), common.darwinCacheKey(inputs)),
+        );
       } else {
         core.info('Darwin LLVM cache was hit, not saving it again');
       }
