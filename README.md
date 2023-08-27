@@ -27,5 +27,3 @@ steps:
 
  - being able to pull in "nightly" releases
  - being able to pull in specific commit hashes
- - if odin version is a release or nightly, pull from website instead
- - caching llvm if that is even possible, also, I believe github does some smart stuff with system packages already
