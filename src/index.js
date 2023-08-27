@@ -14,12 +14,6 @@ async function run() {
     const odinPath = common.odinPath();
     core.addPath(odinPath);
 
-    // TODO:
-    // - caching llvm
-    // - nightly
-    // - commit hashes
-    // - if no need to build from source, don't
-
     await Promise.all([
       pullOdin(inputs.repository, inputs.odinVersion),
       pullOdinBuildDependencies(inputs.llvmVersion),

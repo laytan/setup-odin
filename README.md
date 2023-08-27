@@ -1,6 +1,6 @@
 # Setup Odin
 
-A GitHub action to setup the [Odin](https://github.com/odin-lang/Odin) compiler.
+A GitHub action to setup the [Odin](https://github.com/odin-lang/Odin) compiler with optional cached builds.
 
 ## Usage
 
@@ -22,3 +22,10 @@ steps:
       # repository: https://github.com/odin-lang/Odin
       # cache: true
 ```
+
+### TODO
+
+ - being able to pull in "nightly" releases
+ - being able to pull in specific commit hashes
+ - if odin version is a release or nightly, pull from website instead
+ - caching llvm if that is even possible, also, I believe github does some smart stuff with system packages already
