@@ -4,7 +4,6 @@ const cache = require('@actions/cache');
 const io = require('@actions/io');
 
 const os = require('os');
-const fs = require('fs');
 
 const common = require('./common');
 
@@ -147,12 +146,17 @@ async function pullOdinBuildDependencies(llvm) {
   switch (os.platform()) {
   case 'darwin': {
       const path = `/usr/local/opt/llvm@${llvm}/bin`;
-
       core.addPath(path);
-      if (fs.existsSync(path)) {
-        core.info(`LLVM ${llvm} comes pre-installed on this runner`);
-        return;
-      }
+
+      // // NOTE: expirement.
+      // if (llvm === '14') {
+      //   return;
+      // }
+      //
+      // if (fs.existsSync(path)) {
+      //   core.info(`LLVM ${llvm} comes pre-installed on this runner`);
+      //   return;
+      // }
 
       code = await exec.exec('brew', [
         'install',

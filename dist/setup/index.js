@@ -58478,7 +58478,6 @@ const cache = __nccwpck_require__(7799);
 const io = __nccwpck_require__(7351);
 
 const os = __nccwpck_require__(2037);
-const fs = __nccwpck_require__(7147);
 
 const common = __nccwpck_require__(5010);
 
@@ -58621,12 +58620,17 @@ async function pullOdinBuildDependencies(llvm) {
   switch (os.platform()) {
   case 'darwin': {
       const path = `/usr/local/opt/llvm@${llvm}/bin`;
-
       core.addPath(path);
-      if (fs.existsSync(path)) {
-        core.info(`LLVM ${llvm} comes pre-installed on this runner`);
-        return;
-      }
+
+      // // NOTE: expirement.
+      // if (llvm === '14') {
+      //   return;
+      // }
+      //
+      // if (fs.existsSync(path)) {
+      //   core.info(`LLVM ${llvm} comes pre-installed on this runner`);
+      //   return;
+      // }
 
       code = await exec.exec('brew', [
         'install',
