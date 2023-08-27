@@ -58619,18 +58619,9 @@ async function pullOdinBuildDependencies(llvm) {
   let code;
   switch (os.platform()) {
   case 'darwin': {
-      const path = `/usr/local/opt/llvm@${llvm}/bin`;
-      core.addPath(path);
+      core.addPath(`/usr/local/opt/llvm@${llvm}/bin`);
 
-      // // NOTE: expirement.
-      // if (llvm === '14') {
-      //   return;
-      // }
-      //
-      // if (fs.existsSync(path)) {
-      //   core.info(`LLVM ${llvm} comes pre-installed on this runner`);
-      //   return;
-      // }
+      await exec.exec('brew', ['list']);
 
       code = await exec.exec('brew', [
         'install',
