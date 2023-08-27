@@ -1,6 +1,5 @@
 const core = require('@actions/core');
 const cache = require('@actions/cache');
-const exec = require('@actions/exec');
 
 const path = require('path');
 const os = require('os');
@@ -46,7 +45,7 @@ function getInputs() {
  *
  * @return {string}
  */
-function composeCacheKey(i) {
+function mainCacheKey(i) {
   return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}`;
 }
 
@@ -72,19 +71,23 @@ function cacheCheck(i) {
 /**
  * @param inputs {Inputs}
  *
- * @return {Promise<string[]>}
+ * @return {string}
  */
-async function cachePaths(inputs) {
-  const paths = [odinPath()];
+function darwinCacheKey(inputs) {
+  return `${os.platform()}-llvm_${inputs.llvmVersion}`;
+}
 
-  if (os.platform() === 'darwin') {
-    const cachePath = (await exec.getExecOutput('brew', ['--cache'])).stdout;
-    paths.push(`${cachePath}/llvm@${inputs.llvmVersion}--*`);
-    paths.push(`${cachePath}/downloads/*--llvm@${inputs.llvmVersion}-*`);
-  }
-
-  core.info(`Caching: ${paths.join(', ')}`);
-  return paths;
+/**
+ * @param inputs {Inputs}
+ *
+ * @return {string[]}
+ */
+function darwinCachePaths(inputs) {
+  const cachePath = path.join(os.homedir(), 'Library', 'Caches', 'Homebrew');
+  return [
+    `${cachePath}/llvm@${inputs.llvmVersion}--*`,
+    `${cachePath}/downloads/*--llvm@${inputs.llvmVersion}-*`,
+  ];
 }
 
 let _cachedOdinPath;
@@ -107,8 +110,9 @@ function odinPath() {
 
 module.exports = {
   getInputs,
-  composeCacheKey,
+  mainCacheKey,
   cacheCheck,
   odinPath,
-  cachePaths,
+  darwinCacheKey,
+  darwinCachePaths,
 };

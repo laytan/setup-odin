@@ -58151,7 +58151,6 @@ module.exports.implForWrapper = function (wrapper) {
 
 const core = __nccwpck_require__(2186);
 const cache = __nccwpck_require__(7799);
-const exec = __nccwpck_require__(1514);
 
 const path = __nccwpck_require__(1017);
 const os = __nccwpck_require__(2037);
@@ -58197,7 +58196,7 @@ function getInputs() {
  *
  * @return {string}
  */
-function composeCacheKey(i) {
+function mainCacheKey(i) {
   return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}`;
 }
 
@@ -58223,19 +58222,23 @@ function cacheCheck(i) {
 /**
  * @param inputs {Inputs}
  *
- * @return {Promise<string[]>}
+ * @return {string}
  */
-async function cachePaths(inputs) {
-  const paths = [odinPath()];
+function darwinCacheKey(inputs) {
+  return `${os.platform()}-llvm_${inputs.llvmVersion}`;
+}
 
-  if (os.platform() === 'darwin') {
-    const cachePath = (await exec.getExecOutput('brew', ['--cache'])).stdout;
-    paths.push(`${cachePath}/llvm@${inputs.llvmVersion}--*`);
-    paths.push(`${cachePath}/downloads/*--llvm@${inputs.llvmVersion}-*`);
-  }
-
-  core.info(`Caching: ${paths.join(', ')}`);
-  return paths;
+/**
+ * @param inputs {Inputs}
+ *
+ * @return {string[]}
+ */
+function darwinCachePaths(inputs) {
+  const cachePath = path.join(os.homedir(), 'Library', 'Caches', 'Homebrew');
+  return [
+    `${cachePath}/llvm@${inputs.llvmVersion}--*`,
+    `${cachePath}/downloads/*--llvm@${inputs.llvmVersion}-*`,
+  ];
 }
 
 let _cachedOdinPath;
@@ -58258,10 +58261,11 @@ function odinPath() {
 
 module.exports = {
   getInputs,
-  composeCacheKey,
+  mainCacheKey,
   cacheCheck,
   odinPath,
-  cachePaths,
+  darwinCacheKey,
+  darwinCachePaths,
 };
 
 
@@ -58487,6 +58491,8 @@ var __webpack_exports__ = {};
 const cache = __nccwpck_require__(7799);
 const core = __nccwpck_require__(2186);
 
+const os = __nccwpck_require__(2037);
+
 const common = __nccwpck_require__(5010);
 
 async function run() {
@@ -58496,14 +58502,29 @@ async function run() {
       return;
     }
 
-    if (core.getState('cache-hit') === 'true') {
-      core.info('Cache was hit, not saving it again');
-      return;
+    const promises = [];
+
+    if (core.getState('cache-hit') !== 'true') {
+      promises.push(async () => {
+        await cache.saveCache([common.odinPath()], common.mainCacheKey(inputs));
+        core.info('Saved Odin in cache');
+      })
+    } else {
+      core.info('Odin cache was hit, not saving it again');
     }
-  
-    const key = common.composeCacheKey(inputs);
-    await cache.saveCache(await common.cachePaths(inputs), key);
-    core.info('Saved Odin in cache');
+
+    if (os.platform() === 'darwin') {
+      if (core.getState('darwin-cache-hit' !== 'true')) {
+        promises.push(async () => {
+          await cache.saveCache([common.darwinCachePaths(inputs)], common.darwinCacheKey(inputs));
+          core.info('Saved darwin LLVM in cache');
+        });
+      } else {
+        core.info('Darwin LLVM cache was hit, not saving it again');
+      }
+    }
+
+    await Promise.all(promises);
   } catch (error) {
     core.setFailed(error.message);
   }

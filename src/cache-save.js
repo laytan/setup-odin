@@ -1,6 +1,8 @@
 const cache = require('@actions/cache');
 const core = require('@actions/core');
 
+const os = require('os');
+
 const common = require('./common');
 
 async function run() {
@@ -10,14 +12,29 @@ async function run() {
       return;
     }
 
-    if (core.getState('cache-hit') === 'true') {
-      core.info('Cache was hit, not saving it again');
-      return;
+    const promises = [];
+
+    if (core.getState('cache-hit') !== 'true') {
+      promises.push(async () => {
+        await cache.saveCache([common.odinPath()], common.mainCacheKey(inputs));
+        core.info('Saved Odin in cache');
+      })
+    } else {
+      core.info('Odin cache was hit, not saving it again');
     }
-  
-    const key = common.composeCacheKey(inputs);
-    await cache.saveCache(await common.cachePaths(inputs), key);
-    core.info('Saved Odin in cache');
+
+    if (os.platform() === 'darwin') {
+      if (core.getState('darwin-cache-hit' !== 'true')) {
+        promises.push(async () => {
+          await cache.saveCache([common.darwinCachePaths(inputs)], common.darwinCacheKey(inputs));
+          core.info('Saved darwin LLVM in cache');
+        });
+      } else {
+        core.info('Darwin LLVM cache was hit, not saving it again');
+      }
+    }
+
+    await Promise.all(promises);
   } catch (error) {
     core.setFailed(error.message);
   }

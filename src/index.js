@@ -18,7 +18,7 @@ async function run() {
     if (common.cacheCheck(inputs)) {
       const [cacheSuccess, ] = await Promise.all([
         restoreCache(inputs, odinPath),
-        pullOdinBuildDependencies(inputs.llvmVersion),
+        pullOdinBuildDependencies(inputs),
       ]);
 
       if (cacheSuccess) {
@@ -27,7 +27,7 @@ async function run() {
     } else {
       await Promise.all([
         pullOdin(inputs.repository, inputs.odinVersion),
-        pullOdinBuildDependencies(inputs.llvmVersion),
+        pullOdinBuildDependencies(inputs),
       ]);
     }
 
@@ -69,11 +69,9 @@ async function run() {
  * @return {Promise<bool>} If the cache was hit.
  */
 async function restoreCache(inputs, odinPath) {
-  const key = common.composeCacheKey(inputs);
-  const restoredKey = await cache.restoreCache(
-    await common.cachePaths(inputs),
-    key,
-  );
+  const key = common.mainCacheKey(inputs);
+  const restoredKey = await cache.restoreCache([odinPath], key);
+
   if (key === restoredKey) {
     core.info('Cache HIT, checking if it is still up-to-date');
 
@@ -140,19 +138,31 @@ async function pullUpdates(path, version) {
 }
 
 /**
-  * @param llvm {string} The version of LLVM to pull.
+  * @param inputs {common.Inputs}
   *
   * @return Promise<void>
   */
-async function pullOdinBuildDependencies(llvm) {
+async function pullOdinBuildDependencies(inputs) {
+  const { llvmVersion: llvm } = inputs;
+
   let code;
-  switch (os.platform()) {
+
+  const platform = os.platform();
+  switch (platform) {
   case 'darwin': {
-      core.addPath(`/usr/local/opt/llvm@${llvm}/bin`);
+      if (await cache.restoreCache(common.darwinCachePaths(inputs), common.darwinCacheKey(inputs))) {
+        core.info('Got LLVM install caches');
+        core.saveState('darwin-cache-hit', 'true');
+      } else {
+        core.saveState('darwin-cache-hit', 'false');
+      }
+
       code = await exec.exec('brew', [
         'install',
         `llvm@${llvm}`,
       ]);
+
+      core.addPath(`/usr/local/opt/llvm@${llvm}/bin`);
       break;
   }
   case 'linux': {
