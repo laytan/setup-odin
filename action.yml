@@ -1,6 +1,9 @@
 name: 'Setup Odin'
 description: 'Setup the Odin compiler'
 author: 'laytan'
+branding:
+  color: blue
+  icon: code
 inputs:
   odin-version:
     description: 'The Odin version to setup, supports tag names and branch names'
