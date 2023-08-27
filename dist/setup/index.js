@@ -58530,10 +58530,6 @@ async function run() {
       case 'linux':
         buildExitCode = await exec.exec('./build_odin.sh', [inputs.buildType], {
           cwd: odinPath,
-          // env: {
-          //   'LLVM_CONFIG': `llvm-config-${inputs.llvmVersion}`,
-          //   'CXX':         `clang++-${inputs.llvmVersion}`,
-          // },
         });
         break;
       case 'win32':
@@ -58662,6 +58658,8 @@ async function pullOdinBuildDependencies(inputs) {
       break;
   }
   case 'linux': {
+      core.addPath(`/usr/lib/llvm-${llvm}/bin`);
+
       await io.which(`llvm-${llvm}`)
         .then(() => {
           core.info(`LLVM ${llvm} comes pre-installed on this runner`);
