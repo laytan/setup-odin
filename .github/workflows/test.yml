@@ -11,7 +11,7 @@ jobs:
   units:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: npm ci
     - run: npm test
 
@@ -23,7 +23,7 @@ jobs:
         llvm-version: [13, 14]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: ./
       with:
         llvm-version: ${{ matrix.llvm-version }}
@@ -42,7 +42,7 @@ jobs:
         odin-version: [master, dev-2023-08]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: ./
       with:
         odin-version: ${{ matrix.odin-version }}
