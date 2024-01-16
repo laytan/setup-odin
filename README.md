@@ -20,7 +20,7 @@ steps:
       # llvm-version: 14
       # build-type: debug
       # repository: https://github.com/odin-lang/Odin
-      # cache: true
+      # cache: false
 ```
 
 ### TODO

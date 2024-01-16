@@ -22,8 +22,8 @@ inputs:
     default: 'https://github.com/odin-lang/Odin'
     required: true
   cache:
-    description: 'Enables caching the compiler binary.'
-    default: 'true'
+    description: 'Enables caching the compiler binary, NOTE: this is probably slower than redownloading it everytime.'
+    default: 'false'
 outputs:
   cache-hit:
     description: 'A boolean value to indicate if a cache was hit'
