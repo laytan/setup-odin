@@ -22,7 +22,7 @@ All options are optional and the defaults are shown below.
 
 ```yaml
 steps:
-  - uses: laytan/setup-odin@v1
+  - uses: laytan/setup-odin@v2
     # with:
       # token: {{ secrets.GITHUB_TOKEN }}
       # release: latest
