@@ -8,7 +8,7 @@ See [action.yml](https://github.com/laytan/setup-odin/blob/main/action.yml)
 
 ### Example
 
-Installs the latest Odin commit on the master branch and adds it to PATH.
+Installs Odin and adds it to the runner's PATH.
 
 When the `release` option is set below (default is set to `latest`), the action will download
 a pre-compiled GitHub release instead of building from source.
