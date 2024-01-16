@@ -18,13 +18,18 @@ To compile from source, set `release` to false or an empty string.
 Using releases only works on `dev-2023-10` and later tags because it needs the exact LLVM version
 it was built with in CI on the machine.
 
-All options are optional and the defaults are shown below.
+All options are optional and the defaults are commented below.
+
+NOTE: you MUST set the `token` option to use GitHub releases, copying the setup below will automatically work
+because the `GITHUB_TOKEN` secret is automatically set in an action.
 
 ```yaml
 steps:
   - uses: laytan/setup-odin@v2
+    with:
+      token: ${{ secrets.GITHUB_TOKEN }}
     # with:
-      # token: {{ secrets.GITHUB_TOKEN }}
+      # token: false
       # release: latest
       # branch: master
       # llvm-version: 14
