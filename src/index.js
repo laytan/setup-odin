@@ -2,6 +2,8 @@ const exec = require('@actions/exec');
 const core = require('@actions/core');
 const cache = require('@actions/cache');
 const io = require('@actions/io');
+const github = require('@actions/github');
+const AdmZip = require('adm-zip');
 
 const os = require('os');
 
@@ -11,24 +13,52 @@ const common = require('./common');
 async function run() {
   try {
     const inputs = common.getInputs();
+    // const inputs = {
+    //   branch:     'master',
+    //   repository: 'github.com/odin-lang/Odin',
+    // };
 
     const odinPath = common.odinPath();
     core.addPath(odinPath);
 
-    if (common.cacheCheck(inputs)) {
-      const [cacheSuccess, ] = await Promise.all([
-        restoreCache(inputs, odinPath),
-        pullOdinBuildDependencies(inputs),
-      ]);
+    let pulledOdinDeps = false;
+    if (inputs.release !== "") {
+      const promises = [downloadRelease(inputs)];
 
+      // NOTE: darwin is weird where it still requires an llvm installation, and also the same
+      // installation that was used to build the release.
+      if (os.platform() == 'darwin') {
+        if (inputs.llvmVersion != '13') {
+          core.info('Overwritten llvm to version 13, this is needed for compatibility with the pre-compiled releases.');
+        }
+        promises.push(pullOdinBuildDependencies({...inputs, llvmVersion: '13'}));
+      }
+
+      const [releaseOk, ] = await Promise.all(promises);
+      if (releaseOk) {
+        core.setOutput('cache-hit', false);
+        core.saveState('cache-hit', 'false');
+        return;
+      }
+      pulledOdinDeps = true;
+    }
+
+    if (common.cacheCheck(inputs)) {
+      const promises = [restoreCache(inputs, odinPath)];
+      if (!pulledOdinDeps) {
+        promises.push(pullOdinBuildDependencies(inputs));
+      }
+
+      const [cacheSuccess, ] = await Promise.all(promises);
       if (cacheSuccess) {
         return;
       }
     } else {
-      await Promise.all([
-        pullOdin(inputs.repository, inputs.odinVersion),
-        pullOdinBuildDependencies(inputs),
-      ]);
+      const promises = [pullOdin(inputs.repository, inputs.branch)];
+      if (!pulledOdinDeps) {
+        promises.push(pullOdinBuildDependencies(inputs));
+      }
+      await Promise.all(promises);
     }
 
     core.setOutput('cache-hit', false);
@@ -194,6 +224,92 @@ async function pullOdinBuildDependencies(inputs) {
   if (code !== 0) {
     throw new Error(`Installing Odin dependencies failed with exit code: ${code}`);
   }
+}
+
+/**
+  * @param inputs {common.Inputs}
+  *
+  * @return Promise<bool> Whether to return or fallback to git based install.
+  */
+async function downloadRelease(inputs) {
+  if (os.arch() != 'x64') {
+    core.warning(`There are no pre-compiled releases for the architecture ${os.arch()}, falling back to git based install.`);
+    return false;
+  }
+
+  const parts = inputs.repository.split('/');
+  if (parts.length < 2) {
+    core.setFailed(`Invalid repository ${inputs.repository}.`);
+    return true;
+  }
+
+  if (inputs.token == "") {
+    core.warning('Invalid access token, falling back to git based install.');
+    return false;
+  }
+
+  const octokit = github.getOctokit(inputs.token);
+
+  const repoOpts = { repo: parts[parts.length-1], owner: parts[parts.length-2] };
+
+  let release;
+  if (inputs.release == "latest") {
+    release = await octokit.rest.repos.getLatestRelease(repoOpts);
+  } else {
+    core.info(`Looking for release tagged: ${inputs.release}`);
+    release = await octokit.rest.repos.getReleaseByTag({...repoOpts, tag: inputs.release });
+  }
+  
+  let releaseAssetPrefix;
+  const platform = os.platform();
+  switch (platform) {
+  case 'darwin': {
+    releaseAssetPrefix = 'odin-macos-amd64';
+    break;
+  }
+  case 'linux': {
+    releaseAssetPrefix = 'odin-ubuntu-amd64';
+    break;
+  }
+  case 'win32': {
+    releaseAssetPrefix = 'odin-windows-amd64';
+    break
+  }
+  default:
+      throw new Error(`Operating system ${os.platform()} is not supported by setup-odin`);
+  }
+  
+  core.info(`Release has ${release.data.assets.length} assets, Looking for asset prefix: ${releaseAssetPrefix}`);
+
+  const asset = release.data.assets.find(asset => asset.name.startsWith(releaseAssetPrefix));
+  if (!asset) {
+    core.setFailed('could not find release asset to download');
+    return true;
+  }
+
+  core.info('Downloading release');
+
+  const download = await octokit.rest.repos.getReleaseAsset({
+    ...repoOpts,
+    asset_id: asset.id,
+    headers: {
+      'accept': 'application/octet-stream',
+    },
+  });
+
+  core.info('Unzipping release');
+
+  const zip = new AdmZip(Buffer.from(download.data));
+  zip.extractAllTo(common.odinPath());
+  
+  if (platform == 'linux' || platform == 'darwin') {
+    const code = await exec.exec(`chmod +x ${common.odinPath()}/odin`);
+    if (code != 0) {
+      core.warning(`Exit code ${code} making the compiler executable`);
+    }
+  }
+
+  return true;
 }
 
 run();

@@ -27,7 +27,26 @@ jobs:
     - uses: ./
       with:
         llvm-version: ${{ matrix.llvm-version }}
-        cache: false
+        release: false
+    - name: Version
+      run: odin version
+    - name: Report
+      run: odin report
+    - name: Run test program
+      run: odin run test.odin -file
+
+  test-release:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        release: [latest, dev-2023-10]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./
+      with:
+        release: ${{ matrix.release }}
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Version
       run: odin version
     - name: Report
@@ -45,8 +64,9 @@ jobs:
     - uses: actions/checkout@v3
     - uses: ./
       with:
-        odin-version: ${{ matrix.odin-version }}
+        branch: ${{ matrix.odin-version }}
         llvm-version: 14
+        release: false
     - name: Version
       run: odin version
     - name: Report

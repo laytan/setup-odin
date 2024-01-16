@@ -6,7 +6,9 @@ const os = require('os');
 
 /**
  * @typedef {Object} Inputs
- * @property {string} odinVersion
+ * @property {string} token
+ * @property {'latest'|string} release
+ * @property {string} branch
  * @property {string} llvmVersion
  * @property {''|'debug'|'release'|'release_native'} buildType
  * @property {string} repository
@@ -17,7 +19,9 @@ const os = require('os');
  * @return {Inputs}
  */
 function getInputs() {
-  const odinVersion  = core.getInput('odin-version');
+  const token        = core.getInput('token');
+  const release      = core.getInput('release');
+  const branch       = core.getInput('branch');
   const llvmVersion  = core.getInput('llvm-version');
   const buildType    = core.getInput('build-type');
   const repository   = core.getInput('repository');
@@ -32,7 +36,9 @@ function getInputs() {
   }
 
   return {
-    odinVersion,
+    token,
+    release,
+    branch,
     llvmVersion,
     buildType,
     repository,
@@ -56,7 +62,6 @@ function mainCacheKey(i) {
  */
 function cacheCheck(i) {
   if (!i.cacheEnabled) {
-    core.info('Caching is disabled via options');
     return false;
   }
 
