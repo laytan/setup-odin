@@ -19,7 +19,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
         llvm-version: [13, 14]
     runs-on: ${{ matrix.os }}
     steps:
@@ -38,7 +38,7 @@ jobs:
   test-release:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
         release: [latest, dev-2023-10]
     runs-on: ${{ matrix.os }}
     steps:
@@ -47,6 +47,7 @@ jobs:
       with:
         release: ${{ matrix.release }}
         token: ${{ secrets.GITHUB_TOKEN }}
+        llvm-version: 13
     - name: Version
       run: odin version
     - name: Report
@@ -57,7 +58,7 @@ jobs:
   test-with-cache:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
         odin-version: [master, dev-2023-08]
     runs-on: ${{ matrix.os }}
     steps:

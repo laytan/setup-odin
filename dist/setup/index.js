@@ -87196,7 +87196,7 @@ const os = __nccwpck_require__(2037);
 function getInputs() {
   const token        = core.getInput('token');
   const release      = core.getInput('release');
-  const branch       = core.getInput('branch');
+  let branch         = core.getInput('branch');
   const llvmVersion  = core.getInput('llvm-version');
   const buildType    = core.getInput('build-type');
   const repository   = core.getInput('repository');
@@ -87206,9 +87206,14 @@ function getInputs() {
     throw new Error(`Given build-type "${buildType}" is not supported, use "debug", "release" or "release_native"`);
   }
 
-  if (!['11', '12', '13', '14'].includes(llvmVersion)) {
-    throw new Error(`Given llvm-version "${llvmVersion}" is not supported, use "11", "12", "13" or "14"`);
+  if (!['11', '12', '13', '14', '17'].includes(llvmVersion)) {
+    throw new Error(`Given llvm-version "${llvmVersion}" is not supported, use "11", "12", "13", "14" or "17"`);
   }
+
+  // In case the release isn't available we want to fallback to building that branch from source.
+  if (release && release.length > 0 && release != "false" && release != "False" && release != "FALSE") {
+    branch = release;
+  } 
 
   return {
     token,
@@ -89246,6 +89251,7 @@ const cache = __nccwpck_require__(7799);
 const io = __nccwpck_require__(7351);
 const github = __nccwpck_require__(5438);
 const AdmZip = __nccwpck_require__(6761);
+const fs = __nccwpck_require__(7147);
 
 const os = __nccwpck_require__(2037);
 
@@ -89263,44 +89269,19 @@ async function run() {
     const odinPath = common.odinPath();
     core.addPath(odinPath);
 
-    let pulledOdinDeps = false;
-    if (inputs.release !== "") {
-      const promises = [downloadRelease(inputs)];
-
-      // NOTE: darwin is weird where it still requires an llvm installation, and also the same
-      // installation that was used to build the release.
-      if (os.platform() == 'darwin') {
-        if (inputs.llvmVersion != '13') {
-          core.info('Overwritten llvm to version 13, this is needed for compatibility with the pre-compiled releases.');
-        }
-        promises.push(pullOdinBuildDependencies({...inputs, llvmVersion: '13'}));
-      }
-
-      const [releaseOk, ] = await Promise.all(promises);
-      if (releaseOk) {
-        core.setOutput('cache-hit', false);
-        core.saveState('cache-hit', 'false');
-        return;
-      }
-      pulledOdinDeps = true;
+    if (inputs.release !== "" && await downloadRelease(inputs)) {
+      core.setOutput('cache-hit', false);
+      core.saveState('cache-hit', 'false');
+      return;
     }
 
     if (common.cacheCheck(inputs)) {
-      const promises = [restoreCache(inputs, odinPath)];
-      if (!pulledOdinDeps) {
-        promises.push(pullOdinBuildDependencies(inputs));
-      }
-
-      const [cacheSuccess, ] = await Promise.all(promises);
+      const [cacheSuccess, ] = await Promise.all([restoreCache(inputs, odinPath), pullOdinBuildDependencies(inputs)]);
       if (cacheSuccess) {
         return;
       }
     } else {
-      const promises = [pullOdin(inputs.repository, inputs.branch)];
-      if (!pulledOdinDeps) {
-        promises.push(pullOdinBuildDependencies(inputs));
-      }
-      await Promise.all(promises);
+      await Promise.all([pullOdin(inputs.repository, inputs.branch), pullOdinBuildDependencies(inputs)]);
     }
 
     core.setOutput('cache-hit', false);
@@ -89435,8 +89416,12 @@ async function pullOdinBuildDependencies(inputs) {
         'install',
         `llvm@${llvm}`,
       ]);
-
+    
+      // arm64.
+      core.addPath(`/opt/homebrew/opt/llvm@${llvm}/bin`);
+      // x64.
       core.addPath(`/usr/local/opt/llvm@${llvm}/bin`);
+
       break;
   }
   case 'linux': {
@@ -89474,11 +89459,6 @@ async function pullOdinBuildDependencies(inputs) {
   * @return Promise<bool> Whether to return or fallback to git based install.
   */
 async function downloadRelease(inputs) {
-  if (os.arch() != 'x64') {
-    core.warning(`There are no pre-compiled releases for the architecture ${os.arch()}, falling back to git based install.`);
-    return false;
-  }
-
   const parts = inputs.repository.split('/');
   if (parts.length < 2) {
     core.setFailed(`Invalid repository ${inputs.repository}.`);
@@ -89501,32 +89481,25 @@ async function downloadRelease(inputs) {
     core.info(`Looking for release tagged: ${inputs.release}`);
     release = await octokit.rest.repos.getReleaseByTag({...repoOpts, tag: inputs.release });
   }
-  
-  let releaseAssetPrefix;
-  const platform = os.platform();
-  switch (platform) {
-  case 'darwin': {
-    releaseAssetPrefix = 'odin-macos-amd64';
-    break;
-  }
-  case 'linux': {
-    releaseAssetPrefix = 'odin-ubuntu-amd64';
-    break;
-  }
-  case 'win32': {
-    releaseAssetPrefix = 'odin-windows-amd64';
-    break
-  }
-  default:
-      throw new Error(`Operating system ${os.platform()} is not supported by setup-odin`);
-  }
-  
+
+  const releaseOS = {
+    'darwin': 'macos',
+    'linux':  'ubuntu',
+    'win32':  'windows',
+  }[os.platform()];
+
+  const releaseArch = {
+    'x64':   'amd64',
+    'arm64': 'arm64',
+  }[os.arch()];
+  const releaseAssetPrefix = `odin-${releaseOS}-${releaseArch}`;
+
   core.info(`Release has ${release.data.assets.length} assets, Looking for asset prefix: ${releaseAssetPrefix}`);
 
   const asset = release.data.assets.find(asset => asset.name.startsWith(releaseAssetPrefix));
   if (!asset) {
-    core.setFailed('could not find release asset to download');
-    return true;
+    core.warning('could not find release asset to download, falling back to git based install.');
+    return false;
   }
 
   core.info('Downloading release');
@@ -89543,12 +89516,33 @@ async function downloadRelease(inputs) {
 
   const zip = new AdmZip(Buffer.from(download.data));
   zip.extractAllTo(common.odinPath());
-  
-  if (platform == 'linux' || platform == 'darwin') {
+
+  // NOTE: after dev-2024-03 these releases are zipped in CI and then zipped again by GitHub.
+  // So we check and unzip again here.
+  // I know this is ugly, please do not come for me!
+  const maybeZipInZip = `${common.odinPath()}/dist.zip`;
+  if (fs.existsSync(maybeZipInZip)) {
+    const zipInZip = new AdmZip(maybeZipInZip);
+    zipInZip.extractAllTo(common.odinPath(), false, true);
+    
+    // Basically does a `mv dist/* .`
+    const entries = fs.readdirSync(`${common.odinPath()}/dist`);
+    await Promise.all(entries.map((entry) => io.mv(`${common.odinPath()}/dist/${entry}`, `${common.odinPath()}/${entry}`)));
+    return true;
+  }
+
+  // NOTE: after dev-2024-03 these releases have the executable permission by default, we still 
+  // chmod to support older releases.
+  if (os.platform() == 'linux' || os.platform() == 'darwin') {
     const code = await exec.exec(`chmod +x ${common.odinPath()}/odin`);
     if (code != 0) {
       core.warning(`Exit code ${code} making the compiler executable`);
     }
+  }
+
+  // NOTE: Older releases of darwin did not bundle LLVM, from 2023-10 onwards it needs llvm 13 installed via brew.
+  if (os.platform() == 'darwin') {
+    await pullOdinBuildDependencies({ ...inputs, llvmVersion: '13' });
   }
 
   return true;
