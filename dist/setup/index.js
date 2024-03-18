@@ -46762,7 +46762,8 @@ module.exports = function (/**String*/ input, /** object */ options) {
          *
          * @return Array
          */
-        getEntries: function () {
+        getEntries: function (/**String*/ password) {
+            _zip.password=password;
             return _zip ? _zip.entries : [];
         },
 
@@ -46839,7 +46840,7 @@ module.exports = function (/**String*/ input, /** object */ options) {
                 return true;
             }
 
-            var content = item.getData();
+            var content = item.getData(_zip.password);
             if (!content) throw new Error(Utils.Errors.CANT_EXTRACT_FILE);
 
             if (filetools.fs.existsSync(target) && !overwrite) {
@@ -47001,9 +47002,9 @@ module.exports = function (/**String*/ input, /** object */ options) {
                                     callback(getError("Unable to set times", filePath));
                                     return;
                                 }
-                                fileEntries.delete(entry);
                                 // call the callback if it was last entry
                                 done();
+                                fileEntries.delete(entry);
                             });
                         });
                     }
@@ -47167,7 +47168,9 @@ module.exports = function () {
         set time(val) {
             setTime(val);
         },
-
+        get timeHighByte() {
+            return (_time >>> 8) & 0xff;
+        },
         get crc() {
             return _crc;
         },
@@ -47781,8 +47784,12 @@ function decrypt(/*Buffer*/ data, /*Object*/ header, /*String, Buffer*/ pwd) {
     // 2. decrypt salt what is always 12 bytes and is a part of file content
     const salt = decrypter(data.slice(0, 12));
 
-    // 3. does password meet expectations
-    if (salt[11] !== header.crc >>> 24) {
+    // if bit 3 (0x08) of the general-purpose flags field is set, check salt[11] with the high byte of the header time
+    // 2 byte data block (as per Info-Zip spec), otherwise check with the high byte of the header entry
+    const verifyByte = ((header.flags & 0x8) === 0x8) ? header.timeHighByte : header.crc >>> 24;
+
+    //3. does password meet expectations
+    if (salt[11] !== verifyByte) {
         throw "ADM-ZIP: Wrong Password";
     }
 
@@ -48748,6 +48755,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
         _comment = Buffer.alloc(0),
         mainHeader = new Headers.MainHeader(),
         loadedEntries = false;
+    var password = null;
 
     // assign options
     const opts = Object.assign(Object.create(null), options);
@@ -48999,7 +49007,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
                 // 1.2. postheader - data after data header
                 const postHeader = Buffer.alloc(entryNameLen + entry.extra.length);
                 entry.rawEntryName.copy(postHeader, 0);
-                postHeader.copy(entry.extra, entryNameLen);
+                entry.extra.copy(postHeader, entryNameLen);
 
                 // 2. offsets
                 const dataLength = dataHeader.length + postHeader.length + compressedData.length;
