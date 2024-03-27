@@ -181,8 +181,8 @@ async function pullOdinBuildDependencies(inputs) {
       core.addPath(`/usr/lib/llvm-${llvm}/bin`);
 
       await io.which(`llvm-${llvm}`)
-        .then(() => {
-          core.info(`LLVM ${llvm} comes pre-installed on this runner`);
+        .then((path) => {
+          core.info(`LLVM ${llvm} comes pre-installed on this runner at ${path}`);
           code = 0;
         })
         .catch(async () => {

@@ -80153,7 +80153,7 @@ const os = __nccwpck_require__(2037);
  */
 function getInputs() {
   const token        = core.getInput('token');
-  const release      = core.getInput('release');
+  let release        = core.getInput('release');
   let branch         = core.getInput('branch');
   const llvmVersion  = core.getInput('llvm-version');
   const buildType    = core.getInput('build-type');
@@ -80169,9 +80169,13 @@ function getInputs() {
   }
 
   // In case the release isn't available we want to fallback to building that branch from source.
-  if (release && release.length > 0 && release != "false" && release != "False" && release != "FALSE") {
-    branch = release;
-  } 
+  if (release && release.length > 0) {
+    if (release == "false" || release == "False" || release == "FALSE") {
+      release = "";
+    } else {
+      branch = release;
+    }
+  }
 
   return {
     token,
