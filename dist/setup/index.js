@@ -89441,19 +89441,19 @@ async function pullOdinBuildDependencies(inputs) {
   case 'linux': {
       core.addPath(`/usr/lib/llvm-${llvm}/bin`);
 
-      await io.which(`llvm-${llvm}`)
-        .then((path) => {
-          core.info(`LLVM ${llvm} comes pre-installed on this runner at ${path}`);
+      const preInstalled = fs.existsSync(`/usr/lib/llvm-${llvm}/bin`);
+      if (preInstalled) {
+          core.info(`LLVM ${llvm} comes pre-installed on this runner`);
           code = 0;
-        })
-        .catch(async () => {
+      } else {
           code = await exec.exec('sudo', [
             'apt-fast',
             'install',
             `llvm-${llvm}-dev`,
             `clang-${llvm}`,
           ]);
-        });
+      }
+
       break;
   }
   case 'win32':
