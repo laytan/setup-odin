@@ -182,15 +182,37 @@ async function pullOdinBuildDependencies(inputs) {
 
       const preInstalled = fs.existsSync(`/usr/lib/llvm-${llvm}/bin`);
       if (preInstalled) {
-          core.info(`LLVM ${llvm} comes pre-installed on this runner`);
-          code = 0;
+        core.info(`LLVM ${llvm} comes pre-installed on this runner`);
+        code = 0;
       } else {
-          code = await exec.exec('sudo', [
-            'apt-fast',
-            'install',
-            `llvm-${llvm}-dev`,
-            `clang-${llvm}`,
-          ]);
+        const checkCode = (message) => {
+          return async (code) => {
+            if (code !== 0) {
+              throw new Error(`${message}, code: ${code}`);
+            }
+          };
+        };
+
+        await exec.exec('sudo', ['apt-key', 'adv', '--fetch-keys', 'https://apt.llvm.org/llvm-snapshot.gpg.key'])
+          .then(checkCode('unable to retrieve llvm apt key'))
+          .then(() => exec.getExecOutput('lsb_release', ['-cs']))
+          .then(({stdout: ubuntuVersion, exitCode }) => {
+            checkCode('unable to get ubuntu version')(exitCode);
+            return ubuntuVersion.trim();
+          })
+          .then((ubuntuVersion) => exec.exec('sudo', ['apt-add-repository', `deb http://apt.llvm.org/${ubuntuVersion}/ llvm-toolchain-${ubuntuVersion}-${llvm} main`]))
+          .then(checkCode('unable to add llvm apt repository'))
+          .then(() => exec.exec('sudo', ['apt-fast', 'update']))
+          .then(checkCode('unable to update apt repository'))
+          .catch((err) => { core.warning(err); });
+
+        code = await exec.exec('sudo', [
+          'apt-fast',
+          'install',
+          '-y',
+          `llvm-${llvm}-dev`,
+          `clang-${llvm}`,
+        ]);
       }
 
       break;
