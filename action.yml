@@ -29,7 +29,7 @@ inputs:
     default: 'https://github.com/odin-lang/Odin'
     required: true
   cache:
-    description: 'Enables caching the compiler binary, NOTE: this is probably slower than redownloading it everytime.'
+    description: 'Enables caching the compiler binary, NOTE: this is probably slower than redownloading it everytime and is thus deprectated.'
     default: 'false'
 outputs:
   cache-hit:
