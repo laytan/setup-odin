@@ -87246,7 +87246,7 @@ function getInputs() {
  * @return {string}
  */
 function mainCacheKey(i) {
-  return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}`;
+  return `${os.platform()}-${os.arch()}-${i.repository}-${i.branch}-${i.release}-${i.buildType}-llvm_${i.llvmVersion}`;
 }
 
 /**
@@ -89339,7 +89339,7 @@ async function restoreCache(inputs, odinPath) {
   if (key === restoredKey) {
     core.info('Main cache HIT, checking if it is still up-to-date');
 
-    if (await pullUpdates(odinPath, inputs.odinVersion)) {
+    if (await pullUpdates(odinPath, inputs.branch)) {
       core.info('Main cache is still up-to-date');
       core.setOutput('cache-hit', true);
       core.saveState('cache-hit', 'true');
@@ -89352,7 +89352,7 @@ async function restoreCache(inputs, odinPath) {
   }
   
   core.info('Main cache MISS');
-  await pullOdin(inputs.repository, inputs.odinVersion);
+  await pullOdin(inputs.repository, inputs.branch);
   return false;
 }
 
