@@ -80173,6 +80173,10 @@ function getInputs() {
     }
   }
 
+  if (cacheEnabled) {
+    core.warning('The `cache` options has been deprecated because it is most likely slower than just downloading the release or even building from source. If you think this is a bad decision please file a GitHub issue to discuss.');
+  }
+
   return {
     token,
     release,

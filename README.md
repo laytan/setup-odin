@@ -1,6 +1,6 @@
 # Setup Odin
 
-A GitHub action to setup the [Odin](https://github.com/odin-lang/Odin) compiler with optional cached builds.
+A GitHub action to setup the [Odin](https://github.com/odin-lang/Odin) compiler.
 
 ## Usage
 
@@ -14,9 +14,6 @@ When the `release` option is set below (default is set to `latest`), the action 
 a pre-compiled GitHub release instead of building from source.
 
 To compile from source, set `release` to false or an empty string.
-
-Using releases only works on `dev-2023-10` and later tags because it needs the exact LLVM version
-it was built with in CI on the machine.
 
 All options are optional and the defaults are commented below.
 
@@ -35,7 +32,6 @@ steps:
       # llvm-version: 14
       # build-type: debug
       # repository: https://github.com/odin-lang/Odin
-      # cache: false
 ```
 
 ### TODO

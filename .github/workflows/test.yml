@@ -68,6 +68,7 @@ jobs:
         branch: ${{ matrix.odin-version }}
         llvm-version: 14
         release: false
+        cache: true
     - name: Version
       run: odin version
     - name: Report
