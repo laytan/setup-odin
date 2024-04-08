@@ -92,3 +92,22 @@ jobs:
         run: odin report
       - name: Run test program
         run: odin run test.odin -file
+
+  test-auxiliary:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Version
+        run: odin version
+      - name: Report
+        run: odin report
+      - name: WASM
+        run: odin build test.odin -file -target:js_wasm32
+      - name: ASM
+        run: odin run test-minimal.odin -no-crt
