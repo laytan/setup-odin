@@ -80194,7 +80194,7 @@ function getInputs() {
  * @return {string}
  */
 function mainCacheKey(i) {
-  return `${os.platform()}-${i.repository}-${i.odinVersion}-${i.buildType}-llvm_${i.llvmVersion}`;
+  return `${os.platform()}-${os.arch()}-${i.repository}-${i.branch}-${i.release}-${i.buildType}-llvm_${i.llvmVersion}`;
 }
 
 /**
