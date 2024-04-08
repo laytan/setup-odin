@@ -89534,6 +89534,19 @@ async function downloadRelease(inputs) {
     return false;
   }
 
+  // Linux/Darwin GitHub action runners come with LLVM 14 installed, we add it to path here so we can use
+  // its `wasm-ld` and other LLVM binaries that do not come with the Odin release.
+  // Because this is only really used for linking, I don't think it really matters if the versions
+  // don't match.
+  if (os.platform() == 'linux') {
+    core.addPath(`/usr/lib/llvm-14/bin`);
+  } else if (os.platform() == 'darwin') {
+      // arm64.
+      core.addPath(`/opt/homebrew/opt/llvm@15/bin`);
+      // x64.
+      core.addPath(`/usr/local/opt/llvm@15/bin`);
+  }
+
   core.info('Downloading release');
 
   const download = await octokit.rest.repos.getReleaseAsset({
