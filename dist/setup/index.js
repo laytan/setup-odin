@@ -46716,7 +46716,7 @@ module.exports = function (/**String*/ input, /** object */ options) {
             // prepare new entry
             if (!update) {
                 entry = new ZipEntry();
-                entry.entryName = entryName;
+                entry.entryName = Utils.canonical(entryName);
             }
             entry.comment = comment || "";
 
@@ -46751,6 +46751,8 @@ module.exports = function (/**String*/ input, /** object */ options) {
 
             entry.setData(content);
             if (!update) _zip.setEntry(entry);
+
+            return entry;
         },
 
         /**
@@ -46759,7 +46761,7 @@ module.exports = function (/**String*/ input, /** object */ options) {
          * @return Array
          */
         getEntries: function (/**String*/ password) {
-            _zip.password=password;
+            _zip.password = password;
             return _zip ? _zip.entries : [];
         },
 
@@ -46922,13 +46924,20 @@ module.exports = function (/**String*/ input, /** object */ options) {
          * @param callback The callback will be executed when all entries are extracted successfully or any error is thrown.
          */
         extractAllToAsync: function (/**String*/ targetPath, /**Boolean*/ overwrite, /**Boolean*/ keepOriginalPermission, /**Function*/ callback) {
+            if (typeof overwrite === "function" && !callback) callback = overwrite;
             overwrite = get_Bool(overwrite, false);
             if (typeof keepOriginalPermission === "function" && !callback) callback = keepOriginalPermission;
             keepOriginalPermission = get_Bool(keepOriginalPermission, false);
             if (!callback) {
-                callback = function (err) {
-                    throw new Error(err);
-                };
+                return new Promise((resolve, reject) => {
+                    this.extractAllToAsync(targetPath, overwrite, keepOriginalPermission, function (err) {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(this);
+                        }
+                    });
+                });
             }
             if (!_zip) {
                 callback(new Error(Utils.Errors.NO_ZIP));
@@ -46942,12 +46951,12 @@ module.exports = function (/**String*/ input, /** object */ options) {
 
             // separate directories from files
             const dirEntries = [];
-            const fileEntries = new Set();
+            const fileEntries = [];
             _zip.entries.forEach((e) => {
                 if (e.isDirectory) {
                     dirEntries.push(e);
                 } else {
-                    fileEntries.add(e);
+                    fileEntries.push(e);
                 }
             });
 
@@ -46967,47 +46976,38 @@ module.exports = function (/**String*/ input, /** object */ options) {
                 }
             }
 
-            // callback wrapper, for some house keeping
-            const done = () => {
-                if (fileEntries.size === 0) {
-                    callback();
-                }
-            };
-
-            // Extract file entries asynchronously
-            for (const entry of fileEntries.values()) {
-                const entryName = pth.normalize(canonical(entry.entryName.toString()));
-                const filePath = sanitize(targetPath, entryName);
-                entry.getDataAsync(function (content, err_1) {
-                    if (err_1) {
-                        callback(new Error(err_1));
-                        return;
-                    }
-                    if (!content) {
-                        callback(new Error(Utils.Errors.CANT_EXTRACT_FILE));
+            fileEntries.reverse().reduce(function (next, entry) {
+                return function (err) {
+                    if (err) {
+                        next(err);
                     } else {
-                        // The reverse operation for attr depend on method addFile()
-                        const fileAttr = keepOriginalPermission ? entry.header.fileAttr : undefined;
-                        filetools.writeFileToAsync(filePath, content, overwrite, fileAttr, function (succ) {
-                            if (!succ) {
-                                callback(getError("Unable to write file", filePath));
-                                return;
+                        const entryName = pth.normalize(canonical(entry.entryName.toString()));
+                        const filePath = sanitize(targetPath, entryName);
+                        entry.getDataAsync(function (content, err_1) {
+                            if (err_1) {
+                                next(new Error(err_1));
+                            } else if (!content) {
+                                next(new Error(Utils.Errors.CANT_EXTRACT_FILE));
+                            } else {
+                                // The reverse operation for attr depend on method addFile()
+                                const fileAttr = keepOriginalPermission ? entry.header.fileAttr : undefined;
+                                filetools.writeFileToAsync(filePath, content, overwrite, fileAttr, function (succ) {
+                                    if (!succ) {
+                                        next(getError("Unable to write file", filePath));
+                                    }
+                                    filetools.fs.utimes(filePath, entry.header.time, entry.header.time, function (err_2) {
+                                        if (err_2) {
+                                            next(getError("Unable to set times", filePath));
+                                        } else {
+                                            next();
+                                        }
+                                    });
+                                });
                             }
-                            filetools.fs.utimes(filePath, entry.header.time, entry.header.time, function (err_2) {
-                                if (err_2) {
-                                    callback(getError("Unable to set times", filePath));
-                                    return;
-                                }
-                                // call the callback if it was last entry
-                                done();
-                                fileEntries.delete(entry);
-                            });
                         });
                     }
-                });
-            }
-            // call the callback if fileEntries was empty
-            done();
+                };
+            }, callback)();
         },
 
         /**
@@ -47106,7 +47106,7 @@ module.exports = function () {
     // Without it file names may be corrupted for other apps when file names use unicode chars
     _flags |= Constants.FLG_EFS;
 
-    var _dataHeader = {};
+    var _localHeader = {};
 
     function setTime(val) {
         val = new Date(val);
@@ -47242,29 +47242,29 @@ module.exports = function () {
             _offset = Math.max(0, val) >>> 0;
         },
 
-        get encripted() {
+        get encrypted() {
             return (_flags & 1) === 1;
         },
 
-        get entryHeaderSize() {
+        get centralHeaderSize() {
             return Constants.CENHDR + _fnameLen + _extraLen + _comLen;
         },
 
         get realDataOffset() {
-            return _offset + Constants.LOCHDR + _dataHeader.fnameLen + _dataHeader.extraLen;
+            return _offset + Constants.LOCHDR + _localHeader.fnameLen + _localHeader.extraLen;
         },
 
-        get dataHeader() {
-            return _dataHeader;
+        get localHeader() {
+            return _localHeader;
         },
 
-        loadDataHeaderFromBinary: function (/*Buffer*/ input) {
+        loadLocalHeaderFromBinary: function (/*Buffer*/ input) {
             var data = input.slice(_offset, _offset + Constants.LOCHDR);
             // 30 bytes and should start with "PK\003\004"
             if (data.readUInt32LE(0) !== Constants.LOCSIG) {
                 throw new Error(Utils.Errors.INVALID_LOC);
             }
-            _dataHeader = {
+            _localHeader = {
                 // version needed to extract
                 version: data.readUInt16LE(Constants.LOCVER),
                 // general purpose bit flag
@@ -47323,7 +47323,7 @@ module.exports = function () {
             _offset = data.readUInt32LE(Constants.CENOFF);
         },
 
-        dataHeaderToBinary: function () {
+        localHeaderToBinary: function () {
             // LOC header size (30 bytes)
             var data = Buffer.alloc(Constants.LOCHDR);
             // "PK\003\004"
@@ -47349,7 +47349,7 @@ module.exports = function () {
             return data;
         },
 
-        entryHeaderToBinary: function () {
+        centralHeaderToBinary: function () {
             // CEN header size (46 bytes)
             var data = Buffer.alloc(Constants.CENHDR + _fnameLen + _extraLen + _comLen);
             // "PK\001\002"
@@ -47410,7 +47410,7 @@ module.exports = function () {
                 inAttr: _inattr,
                 attr: _attr,
                 offset: _offset,
-                entryHeaderSize: bytes(Constants.CENHDR + _fnameLen + _extraLen + _comLen)
+                centralHeaderSize: bytes(Constants.CENHDR + _fnameLen + _extraLen + _comLen)
             };
         },
 
@@ -47564,7 +47564,8 @@ module.exports = function () {
         }
     };
 };
- // Misspelled 
+// Misspelled
+
 
 /***/ }),
 
@@ -47621,16 +47622,19 @@ exports.ZipCrypto = __nccwpck_require__(3228);
 /***/ 2153:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = function (/*Buffer*/ inbuf) {
+const version = +(process.versions ? process.versions.node : "").split(".")[0] || 0;
+
+module.exports = function (/*Buffer*/ inbuf, /*number*/ expectedLength) {
     var zlib = __nccwpck_require__(9796);
+    const option = version >= 15 && expectedLength > 0 ? { maxOutputLength: expectedLength } : {};
 
     return {
         inflate: function () {
-            return zlib.inflateRawSync(inbuf);
+            return zlib.inflateRawSync(inbuf, option);
         },
 
         inflateAsync: function (/*Function*/ callback) {
-            var tmp = zlib.createInflateRaw(),
+            var tmp = zlib.createInflateRaw(option),
                 parts = [],
                 total = 0;
             tmp.on("data", function (data) {
@@ -47782,7 +47786,7 @@ function decrypt(/*Buffer*/ data, /*Object*/ header, /*String, Buffer*/ pwd) {
 
     // if bit 3 (0x08) of the general-purpose flags field is set, check salt[11] with the high byte of the header time
     // 2 byte data block (as per Info-Zip spec), otherwise check with the high byte of the header entry
-    const verifyByte = ((header.flags & 0x8) === 0x8) ? header.timeHighByte : header.crc >>> 24;
+    const verifyByte = (header.flags & 0x8) === 0x8 ? header.timeHighByte : header.crc >>> 24;
 
     //3. does password meet expectations
     if (salt[11] !== verifyByte) {
@@ -48017,6 +48021,7 @@ module.exports = {
     /* ADM-ZIP error messages */
     CANT_EXTRACT_FILE: "Could not extract the file",
     CANT_OVERRIDE: "Target file already exists",
+    DISK_ENTRY_TOO_LARGE: "Number of disk entries is too large",
     NO_ZIP: "No zip file was loaded",
     NO_ENTRY: "Entry doesn't exist",
     DIRECTORY_CONTENT_ERROR: "A directory cannot have content",
@@ -48407,7 +48412,7 @@ var Utils = __nccwpck_require__(5182),
     Methods = __nccwpck_require__(3928);
 
 module.exports = function (/*Buffer*/ input) {
-    var _entryHeader = new Headers.EntryHeader(),
+    var _centralHeader = new Headers.EntryHeader(),
         _entryName = Buffer.alloc(0),
         _comment = Buffer.alloc(0),
         _isDirectory = false,
@@ -48415,17 +48420,18 @@ module.exports = function (/*Buffer*/ input) {
         _extra = Buffer.alloc(0);
 
     function getCompressedDataFromZip() {
-        if (!input || !Buffer.isBuffer(input)) {
+        //if (!input || !Buffer.isBuffer(input)) {
+        if (!input || !(input instanceof Uint8Array)) {
             return Buffer.alloc(0);
         }
-        _entryHeader.loadDataHeaderFromBinary(input);
-        return input.slice(_entryHeader.realDataOffset, _entryHeader.realDataOffset + _entryHeader.compressedSize);
+        _centralHeader.loadLocalHeaderFromBinary(input);
+        return input.slice(_centralHeader.realDataOffset, _centralHeader.realDataOffset + _centralHeader.compressedSize);
     }
 
     function crc32OK(data) {
         // if bit 3 (0x08) of the general-purpose flags field is set, then the CRC-32 and file sizes are not known when the header is written
-        if ((_entryHeader.flags & 0x8) !== 0x8) {
-            if (Utils.crc32(data) !== _entryHeader.dataHeader.crc) {
+        if ((_centralHeader.flags & 0x8) !== 0x8) {
+            if (Utils.crc32(data) !== _centralHeader.localHeader.crc) {
                 return false;
             }
         } else {
@@ -48456,16 +48462,16 @@ module.exports = function (/*Buffer*/ input) {
             return compressedData;
         }
 
-        if (_entryHeader.encripted) {
+        if (_centralHeader.encrypted) {
             if ("string" !== typeof pass && !Buffer.isBuffer(pass)) {
                 throw new Error("ADM-ZIP: Incompatible password parameter");
             }
-            compressedData = Methods.ZipCrypto.decrypt(compressedData, _entryHeader, pass);
+            compressedData = Methods.ZipCrypto.decrypt(compressedData, _centralHeader, pass);
         }
 
-        var data = Buffer.alloc(_entryHeader.size);
+        var data = Buffer.alloc(_centralHeader.size);
 
-        switch (_entryHeader.method) {
+        switch (_centralHeader.method) {
             case Utils.Constants.STORED:
                 compressedData.copy(data);
                 if (!crc32OK(data)) {
@@ -48477,7 +48483,7 @@ module.exports = function (/*Buffer*/ input) {
                     return data;
                 }
             case Utils.Constants.DEFLATED:
-                var inflater = new Methods.Inflater(compressedData);
+                var inflater = new Methods.Inflater(compressedData, _centralHeader.size);
                 if (!async) {
                     const result = inflater.inflate(data);
                     result.copy(data, 0);
@@ -48514,9 +48520,9 @@ module.exports = function (/*Buffer*/ input) {
         if (uncompressedData.length && !_isDirectory) {
             var compressedData;
             // Local file header
-            switch (_entryHeader.method) {
+            switch (_centralHeader.method) {
                 case Utils.Constants.STORED:
-                    _entryHeader.compressedSize = _entryHeader.size;
+                    _centralHeader.compressedSize = _centralHeader.size;
 
                     compressedData = Buffer.alloc(uncompressedData.length);
                     uncompressedData.copy(compressedData);
@@ -48528,12 +48534,12 @@ module.exports = function (/*Buffer*/ input) {
                     var deflater = new Methods.Deflater(uncompressedData);
                     if (!async) {
                         var deflated = deflater.deflate();
-                        _entryHeader.compressedSize = deflated.length;
+                        _centralHeader.compressedSize = deflated.length;
                         return deflated;
                     } else {
                         deflater.deflateAsync(function (data) {
                             compressedData = Buffer.alloc(data.length);
-                            _entryHeader.compressedSize = data.length;
+                            _centralHeader.compressedSize = data.length;
                             data.copy(compressedData);
                             callback && callback(compressedData);
                         });
@@ -48574,26 +48580,26 @@ module.exports = function (/*Buffer*/ input) {
 
         if (data.length >= Constants.EF_ZIP64_SCOMP) {
             size = readUInt64LE(data, Constants.EF_ZIP64_SUNCOMP);
-            if (_entryHeader.size === Constants.EF_ZIP64_OR_32) {
-                _entryHeader.size = size;
+            if (_centralHeader.size === Constants.EF_ZIP64_OR_32) {
+                _centralHeader.size = size;
             }
         }
         if (data.length >= Constants.EF_ZIP64_RHO) {
             compressedSize = readUInt64LE(data, Constants.EF_ZIP64_SCOMP);
-            if (_entryHeader.compressedSize === Constants.EF_ZIP64_OR_32) {
-                _entryHeader.compressedSize = compressedSize;
+            if (_centralHeader.compressedSize === Constants.EF_ZIP64_OR_32) {
+                _centralHeader.compressedSize = compressedSize;
             }
         }
         if (data.length >= Constants.EF_ZIP64_DSN) {
             offset = readUInt64LE(data, Constants.EF_ZIP64_RHO);
-            if (_entryHeader.offset === Constants.EF_ZIP64_OR_32) {
-                _entryHeader.offset = offset;
+            if (_centralHeader.offset === Constants.EF_ZIP64_OR_32) {
+                _centralHeader.offset = offset;
             }
         }
         if (data.length >= Constants.EF_ZIP64_DSN + 4) {
             diskNumStart = data.readUInt32LE(Constants.EF_ZIP64_DSN);
-            if (_entryHeader.diskNumStart === Constants.EF_ZIP64_OR_16) {
-                _entryHeader.diskNumStart = diskNumStart;
+            if (_centralHeader.diskNumStart === Constants.EF_ZIP64_OR_16) {
+                _centralHeader.diskNumStart = diskNumStart;
             }
         }
     }
@@ -48609,7 +48615,7 @@ module.exports = function (/*Buffer*/ input) {
             _entryName = Utils.toBuffer(val);
             var lastChar = _entryName[_entryName.length - 1];
             _isDirectory = lastChar === 47 || lastChar === 92;
-            _entryHeader.fileNameLength = _entryName.length;
+            _centralHeader.fileNameLength = _entryName.length;
         },
 
         get extra() {
@@ -48617,7 +48623,7 @@ module.exports = function (/*Buffer*/ input) {
         },
         set extra(val) {
             _extra = val;
-            _entryHeader.extraLength = val.length;
+            _centralHeader.extraLength = val.length;
             parseExtra(val);
         },
 
@@ -48626,7 +48632,7 @@ module.exports = function (/*Buffer*/ input) {
         },
         set comment(val) {
             _comment = Utils.toBuffer(val);
-            _entryHeader.commentLength = _comment.length;
+            _centralHeader.commentLength = _comment.length;
         },
 
         get name() {
@@ -48653,18 +48659,18 @@ module.exports = function (/*Buffer*/ input) {
         setData: function (value) {
             uncompressedData = Utils.toBuffer(value);
             if (!_isDirectory && uncompressedData.length) {
-                _entryHeader.size = uncompressedData.length;
-                _entryHeader.method = Utils.Constants.DEFLATED;
-                _entryHeader.crc = Utils.crc32(value);
-                _entryHeader.changed = true;
+                _centralHeader.size = uncompressedData.length;
+                _centralHeader.method = Utils.Constants.DEFLATED;
+                _centralHeader.crc = Utils.crc32(value);
+                _centralHeader.changed = true;
             } else {
                 // folders and blank files should be stored
-                _entryHeader.method = Utils.Constants.STORED;
+                _centralHeader.method = Utils.Constants.STORED;
             }
         },
 
         getData: function (pass) {
-            if (_entryHeader.changed) {
+            if (_centralHeader.changed) {
                 return uncompressedData;
             } else {
                 return decompress(false, null, pass);
@@ -48672,7 +48678,7 @@ module.exports = function (/*Buffer*/ input) {
         },
 
         getDataAsync: function (/*Function*/ callback, pass) {
-            if (_entryHeader.changed) {
+            if (_centralHeader.changed) {
                 callback(uncompressedData);
             } else {
                 decompress(true, callback, pass);
@@ -48680,37 +48686,57 @@ module.exports = function (/*Buffer*/ input) {
         },
 
         set attr(attr) {
-            _entryHeader.attr = attr;
+            _centralHeader.attr = attr;
         },
         get attr() {
-            return _entryHeader.attr;
+            return _centralHeader.attr;
         },
 
         set header(/*Buffer*/ data) {
-            _entryHeader.loadFromBinary(data);
+            _centralHeader.loadFromBinary(data);
         },
 
         get header() {
-            return _entryHeader;
+            return _centralHeader;
         },
 
-        packHeader: function () {
+        packCentralHeader: function () {
             // 1. create header (buffer)
-            var header = _entryHeader.entryHeaderToBinary();
+            var header = _centralHeader.centralHeaderToBinary();
             var addpos = Utils.Constants.CENHDR;
             // 2. add file name
             _entryName.copy(header, addpos);
             addpos += _entryName.length;
             // 3. add extra data
-            if (_entryHeader.extraLength) {
+            if (_centralHeader.extraLength) {
                 _extra.copy(header, addpos);
-                addpos += _entryHeader.extraLength;
+                addpos += _centralHeader.extraLength;
             }
             // 4. add file comment
-            if (_entryHeader.commentLength) {
+            if (_centralHeader.commentLength) {
                 _comment.copy(header, addpos);
             }
             return header;
+        },
+
+        packLocalHeader: function () {
+            let addpos = 0;
+
+            // 1. construct local header Buffer
+            const localHeaderBuf = _centralHeader.localHeaderToBinary();
+            // 2. localHeader - crate header buffer
+            const localHeader = Buffer.alloc(localHeaderBuf.length + _entryName.length + _extra.length);
+            // 2.1 add localheader
+            localHeaderBuf.copy(localHeader, addpos);
+            addpos += localHeaderBuf.length;
+            // 2.2 add file name
+            _entryName.copy(localHeader, addpos);
+            addpos += _entryName.length;
+            // 2.3 add extra field
+            _extra.copy(localHeader, addpos);
+            addpos += _extra.length;
+
+            return localHeader;
         },
 
         toJSON: function () {
@@ -48723,7 +48749,7 @@ module.exports = function (/*Buffer*/ input) {
                 name: this.name,
                 comment: this.comment,
                 isDirectory: this.isDirectory,
-                header: _entryHeader.toJSON(),
+                header: _centralHeader.toJSON(),
                 compressedData: bytes(input),
                 data: bytes(uncompressedData)
             };
@@ -48777,7 +48803,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
             entry.header = inBuffer.slice(tmp, (tmp += Utils.Constants.CENHDR));
             entry.entryName = inBuffer.slice(tmp, (tmp += entry.header.fileNameLength));
 
-            index += entry.header.entryHeaderSize;
+            index += entry.header.centralHeaderSize;
 
             callback(entry);
         }
@@ -48786,6 +48812,9 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
     function readEntries() {
         loadedEntries = true;
         entryTable = {};
+        if (mainHeader.diskEntries > (inBuffer.length - mainHeader.offset) / Utils.Constants.CENHDR) {
+            throw new Error(Utils.Errors.DISK_ENTRY_TOO_LARGE);
+        }
         entryList = new Array(mainHeader.diskEntries); // total number of entries
         var index = mainHeader.offset; // offset of first CEN header
         for (var i = 0; i < entryList.length; i++) {
@@ -48801,7 +48830,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
 
             if (entry.header.commentLength) entry.comment = inBuffer.slice(tmp, tmp + entry.header.commentLength);
 
-            index += entry.header.entryHeaderSize;
+            index += entry.header.centralHeaderSize;
 
             entryList[i] = entry;
             entryTable[entry.entryName] = entry;
@@ -48986,7 +49015,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
             sortEntries();
 
             const dataBlock = [];
-            const entryHeaders = [];
+            const headerBlocks = [];
             let totalSize = 0;
             let dindex = 0;
 
@@ -48996,30 +49025,25 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
             for (const entry of entryList) {
                 // compress data and set local and entry header accordingly. Reason why is called first
                 const compressedData = entry.getCompressedData();
-                // 1. construct data header
                 entry.header.offset = dindex;
-                const dataHeader = entry.header.dataHeaderToBinary();
-                const entryNameLen = entry.rawEntryName.length;
-                // 1.2. postheader - data after data header
-                const postHeader = Buffer.alloc(entryNameLen + entry.extra.length);
-                entry.rawEntryName.copy(postHeader, 0);
-                entry.extra.copy(postHeader, entryNameLen);
+
+                // 1. construct local header
+                const localHeader = entry.packLocalHeader();
 
                 // 2. offsets
-                const dataLength = dataHeader.length + postHeader.length + compressedData.length;
+                const dataLength = localHeader.length + compressedData.length;
                 dindex += dataLength;
 
                 // 3. store values in sequence
-                dataBlock.push(dataHeader);
-                dataBlock.push(postHeader);
+                dataBlock.push(localHeader);
                 dataBlock.push(compressedData);
 
-                // 4. construct entry header
-                const entryHeader = entry.packHeader();
-                entryHeaders.push(entryHeader);
+                // 4. construct central header
+                const centralHeader = entry.packCentralHeader();
+                headerBlocks.push(centralHeader);
                 // 5. update main header
-                mainHeader.size += entryHeader.length;
-                totalSize += dataLength + entryHeader.length;
+                mainHeader.size += centralHeader.length;
+                totalSize += dataLength + centralHeader.length;
             }
 
             totalSize += mainHeader.mainHeaderSize; // also includes zip file comment length
@@ -49035,7 +49059,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
             }
 
             // write central directory entries
-            for (const content of entryHeaders) {
+            for (const content of headerBlocks) {
                 content.copy(outBuffer, dindex);
                 dindex += content.length;
             }
@@ -49058,7 +49082,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
                 sortEntries();
 
                 const dataBlock = [];
-                const entryHeaders = [];
+                const centralHeaders = [];
                 let totalSize = 0;
                 let dindex = 0;
 
@@ -49066,29 +49090,30 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
                 mainHeader.offset = 0;
 
                 const compress2Buffer = function (entryLists) {
-                    if (entryLists.length) {
-                        const entry = entryLists.pop();
+                    if (entryLists.length > 0) {
+                        const entry = entryLists.shift();
                         const name = entry.entryName + entry.extra.toString();
                         if (onItemStart) onItemStart(name);
                         entry.getCompressedDataAsync(function (compressedData) {
                             if (onItemEnd) onItemEnd(name);
-
                             entry.header.offset = dindex;
-                            // data header
-                            const dataHeader = entry.header.dataHeaderToBinary();
-                            const postHeader = Buffer.alloc(name.length, name);
-                            const dataLength = dataHeader.length + postHeader.length + compressedData.length;
 
+                            // 1. construct local header
+                            const localHeader = entry.packLocalHeader();
+
+                            // 2. offsets
+                            const dataLength = localHeader.length + compressedData.length;
                             dindex += dataLength;
 
-                            dataBlock.push(dataHeader);
-                            dataBlock.push(postHeader);
+                            // 3. store values in sequence
+                            dataBlock.push(localHeader);
                             dataBlock.push(compressedData);
 
-                            const entryHeader = entry.packHeader();
-                            entryHeaders.push(entryHeader);
-                            mainHeader.size += entryHeader.length;
-                            totalSize += dataLength + entryHeader.length;
+                            // central header
+                            const centalHeader = entry.packCentralHeader();
+                            centralHeaders.push(centalHeader);
+                            mainHeader.size += centalHeader.length;
+                            totalSize += dataLength + centalHeader.length;
 
                             compress2Buffer(entryLists);
                         });
@@ -49103,7 +49128,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
                             content.copy(outBuffer, dindex); // write data blocks
                             dindex += content.length;
                         });
-                        entryHeaders.forEach(function (content) {
+                        centralHeaders.forEach(function (content) {
                             content.copy(outBuffer, dindex); // write central directory entries
                             dindex += content.length;
                         });
@@ -49119,7 +49144,7 @@ module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {
                     }
                 };
 
-                compress2Buffer(entryList);
+                compress2Buffer(Array.from(entryList));
             } catch (e) {
                 onFail(e);
             }
