@@ -89571,23 +89571,28 @@ async function downloadRelease(inputs) {
   // I know this is ugly, please do not come for me!
   const maybeZipInZip = `${common.odinPath()}/dist.zip`;
   if (fs.existsSync(maybeZipInZip)) {
+    core.info('Unzipping nested zip');
     const zipInZip = new AdmZip(maybeZipInZip);
     zipInZip.extractAllTo(common.odinPath(), false, true);
-    
+  }
+
+  // NOTE: after dev-2024-06 releases don't seem to be doubly zipped anymore
+  // but do still have the nested dist folder we need to move.
+  const maybeNestedDistName = (os.platform() == 'win32') ? '/windows_artifacts' : '/dist';
+  const maybeNestedDist = `${common.odinPath()}/${maybeNestedDistName}`;
+  if (fs.existsSync(maybeNestedDist)) {
+    core.info('Moving dist folder');
     // Basically does a `mv dist/* .`
-    const entries = fs.readdirSync(`${common.odinPath()}/dist`);
-    await Promise.all(entries.map((entry) => io.mv(`${common.odinPath()}/dist/${entry}`, `${common.odinPath()}/${entry}`)));
+    const entries = fs.readdirSync(maybeNestedDist);
+    await Promise.all(entries.map((entry) => io.mv(`${maybeNestedDist}/${entry}`, `${common.odinPath()}/${entry}`)));
+
+    // NOTE: somehow after dev-2024-06 we also need to make it executable again...
+    makeCompilerExecutable();
+
     return true;
   }
 
-  // NOTE: after dev-2024-03 these releases have the executable permission by default, we still 
-  // chmod to support older releases.
-  if (os.platform() == 'linux' || os.platform() == 'darwin') {
-    const code = await exec.exec(`chmod +x ${common.odinPath()}/odin`);
-    if (code != 0) {
-      core.warning(`Exit code ${code} making the compiler executable`);
-    }
-  }
+  makeCompilerExecutable();
 
   // NOTE: Older releases of darwin did not bundle LLVM, from 2023-10 onwards it needs llvm 13 installed via brew.
   if (os.platform() == 'darwin') {
@@ -89595,6 +89600,17 @@ async function downloadRelease(inputs) {
   }
 
   return true;
+}
+
+// NOTE: after dev-2024-03 these releases have the executable permission by default, we still 
+// chmod to support older releases.
+async function makeCompilerExecutable() {
+  if (os.platform() == 'linux' || os.platform() == 'darwin') {
+    const code = await exec.exec(`chmod +x ${common.odinPath()}/odin`);
+    if (code != 0) {
+      core.warning(`Exit code ${code} making the compiler executable`);
+    }
+  }
 }
 
 run();
