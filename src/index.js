@@ -317,16 +317,15 @@ async function downloadRelease(inputs) {
 
   // NOTE: after dev-2024-06 releases don't seem to be doubly zipped anymore
   // but do still have the nested dist folder we need to move.
-  const maybeNestedDist = `${common.odinPath()}/dist`;
+  const maybeNestedDistName = (os.platform() == 'win32') ? '/windows_artifacts' : '/dist';
+  const maybeNestedDist = `${common.odinPath()}/${maybeNestedDistName}`;
   if (fs.existsSync(maybeNestedDist)) {
     core.info('Moving dist folder');
     // Basically does a `mv dist/* .`
     const entries = fs.readdirSync(maybeNestedDist);
     await Promise.all(entries.map((entry) => io.mv(`${maybeNestedDist}/${entry}`, `${common.odinPath()}/${entry}`)));
 
-    const executableExists = fs.existsSync(`${common.odinPath()}/odin`);
-    core.info(`executable exists? ${executableExists}`);
-
+    // NOTE: somehow after dev-2024-06 we also need to make it executable again...
     makeCompilerExecutable();
 
     return true;
