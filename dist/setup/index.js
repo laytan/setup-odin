@@ -89573,10 +89573,15 @@ async function downloadRelease(inputs) {
   if (fs.existsSync(maybeZipInZip)) {
     const zipInZip = new AdmZip(maybeZipInZip);
     zipInZip.extractAllTo(common.odinPath(), false, true);
-    
+  }
+
+  // NOTE: after dev-2024-06 releases don't seem to be doubly zipped anymore
+  // but do still have the nested dist folder we need to move.
+  const maybeNestedDist = `${common.odinPath()}/dist`;
+  if (fs.existsSync(maybeNestedDist)) {
     // Basically does a `mv dist/* .`
-    const entries = fs.readdirSync(`${common.odinPath()}/dist`);
-    await Promise.all(entries.map((entry) => io.mv(`${common.odinPath()}/dist/${entry}`, `${common.odinPath()}/${entry}`)));
+    const entries = fs.readdirSync(maybeNestedDist);
+    await Promise.all(entries.map((entry) => io.mv(`${maybeNestedDist}/${entry}`, `${common.odinPath()}/${entry}`)));
     return true;
   }
 
