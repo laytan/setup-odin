@@ -20,7 +20,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
-        llvm-version: [13, 14]
+        # not doing 13 anymore, see Odin #4017
+        llvm-version: [14]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
