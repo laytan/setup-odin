@@ -110,11 +110,10 @@ jobs:
         run: odin report
       - name: WASM
         run: odin build test.odin -file -target:js_wasm32
-        # See Odin #3396
-        # - name: Get NASM
-        #   run: sudo apt-get install -y nasm
-        #   if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Get NASM
+        run: sudo apt-get install -y nasm
+        if: ${{ matrix.os == 'ubuntu-latest' }}
       - name: ASM
         run: odin run test-minimal.odin -file -no-crt -default-to-nil-allocator -no-thread-local
-        # See Odin #3396
-        if: ${{ matrix.os != 'ubuntu-latest' }}
+        # See Odin #4016
+        if: ${{ matrix.os != 'macos-14' }}
