@@ -89603,7 +89603,14 @@ async function downloadRelease(inputs) {
 
   // NOTE: after dev-2024-06 releases don't seem to be doubly zipped anymore
   // but do still have the nested dist folder we need to move.
-  const maybeNestedDistName = (os.platform() == 'win32') ? '/windows_artifacts' : '/dist';
+
+  // NOTE: dev-2024-07 has 'windows_artifacts' on windows, all others have 'dist'.
+
+  let maybeNestedDistName = 'windows_artifacts';
+  if (!fs.existsSync(`${common.odinPath()}/${maybeNestedDistName}`)) {
+    maybeNestedDistName = 'dist';
+  }
+
   const maybeNestedDist = `${common.odinPath()}/${maybeNestedDistName}`;
   if (fs.existsSync(maybeNestedDist)) {
     core.info('Moving dist folder');
