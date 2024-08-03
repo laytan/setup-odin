@@ -20,7 +20,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
-        llvm-version: [13, 14]
+        # not doing 13 anymore, see Odin #4017
+        llvm-version: [14]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
@@ -110,11 +111,10 @@ jobs:
         run: odin report
       - name: WASM
         run: odin build test.odin -file -target:js_wasm32
-        # See Odin #3396
-        # - name: Get NASM
-        #   run: sudo apt-get install -y nasm
-        #   if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Get NASM
+        run: sudo apt-get install -y nasm
+        if: ${{ matrix.os == 'ubuntu-latest' }}
       - name: ASM
         run: odin run test-minimal.odin -file -no-crt -default-to-nil-allocator -no-thread-local
-        # See Odin #3396
-        if: ${{ matrix.os != 'ubuntu-latest' }}
+        # See Odin #4016
+        if: ${{ matrix.os != 'macos-14' }}
