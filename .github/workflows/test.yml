@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
         # not doing 13 anymore, see Odin #4017
-        llvm-version: [14]
+        llvm-version: [17, 18]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
@@ -48,7 +48,6 @@ jobs:
       with:
         release: ${{ matrix.release }}
         token: ${{ secrets.GITHUB_TOKEN }}
-        llvm-version: 13
     - name: Version
       run: odin version
     - name: Report
@@ -67,7 +66,7 @@ jobs:
     - uses: ./
       with:
         branch: ${{ matrix.odin-version }}
-        llvm-version: 14
+        llvm-version: 17
         release: false
         cache: true
     - name: Version
@@ -76,24 +75,6 @@ jobs:
       run: odin report
     - name: Run test program
       run: odin run test.odin -file
-
-  test-source-llvm-17:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, macos-14]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./
-        with:
-          release: false
-          llvm-version: 17
-      - name: Version
-        run: odin version
-      - name: Report
-        run: odin report
-      - name: Run test program
-        run: odin run test.odin -file
 
   test-auxiliary:
     strategy:
