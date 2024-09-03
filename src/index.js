@@ -333,12 +333,12 @@ async function downloadRelease(inputs) {
     await Promise.all(entries.map((entry) => io.mv(`${maybeNestedDist}/${entry}`, `${common.odinPath()}/${entry}`)));
 
     // NOTE: somehow after dev-2024-06 we also need to make it executable again...
-    finalizeRelease();
+    finalizeRelease(inputs);
 
     return true;
   }
 
-  finalizeRelease();
+  finalizeRelease(inputs);
 
   // NOTE: Older releases of darwin did not bundle LLVM, from 2023-10 onwards it needs llvm 13 installed via brew.
   if (os.platform() == 'darwin') {
@@ -348,7 +348,7 @@ async function downloadRelease(inputs) {
   return true;
 }
 
-async function finalizeRelease() {
+async function finalizeRelease(inputs) {
   // NOTE: after dev-2024-03 these releases have the executable permission by default, we still 
   // chmod to support older releases.
   if (os.platform() == 'linux' || os.platform() == 'darwin') {
@@ -363,6 +363,8 @@ async function finalizeRelease() {
     if (fs.existsSync(possibleLibLLVMToRename)) {
       fs.cpSync(possibleLibLLVMToRename, `${common.odinPath()}/libLLVM-18.so.18.1`);
     }
+
+    await pullOdinBuildDependencies({...inputs, llvmVersion: '18'});
   }
 }
 
