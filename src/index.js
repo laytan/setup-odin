@@ -327,17 +327,15 @@ async function downloadRelease(inputs) {
 
   // NOTE: dev-2024-07 has 'windows_artifacts' on windows, all others have 'dist'.
 
-  let maybeNestedDistName = 'windows_artifacts';
-  if (!fs.existsSync(`${common.odinPath()}/${maybeNestedDistName}`)) {
-    maybeNestedDistName = 'dist';
-  }
-
-  const maybeNestedDist = `${common.odinPath()}/${maybeNestedDistName}`;
-  if (fs.existsSync(maybeNestedDist)) {
+  const dir = fs.readdirSync(common.odinPath());
+  if (dir.length == 1) {
     core.info('Moving dist folder');
+
+    const distDir = `${common.odinPath()}/${dir[0]}`;
+
     // Basically does a `mv dist/* .`
-    const entries = fs.readdirSync(maybeNestedDist);
-    await Promise.all(entries.map((entry) => io.mv(`${maybeNestedDist}/${entry}`, `${common.odinPath()}/${entry}`)));
+    const entries = fs.readdirSync(distDir);
+    await Promise.all(entries.map((entry) => io.mv(`${distDir}/${entry}`, `${common.odinPath()}/${entry}`)));
 
     // NOTE: somehow after dev-2024-06 we also need to make it executable again...
     finalizeRelease(inputs);
