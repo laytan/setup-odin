@@ -89759,23 +89759,30 @@ async function downloadRelease(inputs) {
   }
 
   const releaseOS = {
-    'darwin': 'macos',
-    'linux':  'ubuntu',
-    'win32':  'windows',
+    'darwin': ['macos'],
+    'linux':  ['linux', 'ubuntu'],
+    'win32':  ['windows'],
   }[os.platform()];
 
   const releaseArch = {
     'x64':   'amd64',
     'arm64': 'arm64',
   }[os.arch()];
-  const releaseAssetPrefix = `odin-${releaseOS}-${releaseArch}`;
 
-  core.info(`Release has ${release.data.assets.length} assets, Looking for asset prefix: ${releaseAssetPrefix}`);
+  let asset;
+  for (const tryOS of releaseOS) {
+    const releaseAssetPrefix = `odin-${tryOS}-${releaseArch}`;
+    core.info(`Release has ${release.data.assets.length} assets, Looking for asset prefix: ${releaseAssetPrefix}`);
 
-  const asset = release.data.assets.find(asset => asset.name.startsWith(releaseAssetPrefix));
+    asset = release.data.assets.find(asset => asset.name.startsWith(releaseAssetPrefix));
+    if (asset) {
+      break;
+    }
+  }
+
   if (!asset) {
-    core.warning('could not find release asset to download, falling back to git based install.');
-    return false;
+      core.warning('could not find release asset to download, falling back to git based install.');
+      return false;
   }
 
   // Linux/Darwin GitHub action runners come with LLVM 14 installed, we add it to path here so we can use
