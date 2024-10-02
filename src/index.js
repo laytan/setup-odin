@@ -356,6 +356,8 @@ async function downloadRelease(inputs) {
 }
 
 async function finalizeRelease(inputs) {
+  exec.exec(`ls -lha ${common.odinPath()}`);
+
   // NOTE: after dev-2024-03 these releases have the executable permission by default, we still 
   // chmod to support older releases.
   if (os.platform() == 'linux' || os.platform() == 'darwin') {
