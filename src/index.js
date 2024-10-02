@@ -258,23 +258,30 @@ async function downloadRelease(inputs) {
   }
 
   const releaseOS = {
-    'darwin': 'macos',
-    'linux':  'ubuntu',
-    'win32':  'windows',
+    'darwin': ['macos'],
+    'linux':  ['linux', 'ubuntu'],
+    'win32':  ['windows'],
   }[os.platform()];
 
   const releaseArch = {
     'x64':   'amd64',
     'arm64': 'arm64',
   }[os.arch()];
-  const releaseAssetPrefix = `odin-${releaseOS}-${releaseArch}`;
 
-  core.info(`Release has ${release.data.assets.length} assets, Looking for asset prefix: ${releaseAssetPrefix}`);
+  let asset;
+  for (const tryOS of releaseOS) {
+    const releaseAssetPrefix = `odin-${tryOS}-${releaseArch}`;
+    core.info(`Release has ${release.data.assets.length} assets, Looking for asset prefix: ${releaseAssetPrefix}`);
 
-  const asset = release.data.assets.find(asset => asset.name.startsWith(releaseAssetPrefix));
+    asset = release.data.assets.find(asset => asset.name.startsWith(releaseAssetPrefix));
+    if (asset) {
+      break;
+    }
+  }
+
   if (!asset) {
-    core.warning('could not find release asset to download, falling back to git based install.');
-    return false;
+      core.warning('could not find release asset to download, falling back to git based install.');
+      return false;
   }
 
   // Linux/Darwin GitHub action runners come with LLVM 14 installed, we add it to path here so we can use
@@ -313,6 +320,7 @@ async function downloadRelease(inputs) {
     core.info('Unzipping nested zip');
     const zipInZip = new AdmZip(maybeZipInZip);
     zipInZip.extractAllTo(common.odinPath(), false, true);
+    fs.unlinkSync(maybeZipInZip);
   }
 
   // NOTE: after dev-2024-06 releases don't seem to be doubly zipped anymore
@@ -320,17 +328,15 @@ async function downloadRelease(inputs) {
 
   // NOTE: dev-2024-07 has 'windows_artifacts' on windows, all others have 'dist'.
 
-  let maybeNestedDistName = 'windows_artifacts';
-  if (!fs.existsSync(`${common.odinPath()}/${maybeNestedDistName}`)) {
-    maybeNestedDistName = 'dist';
-  }
-
-  const maybeNestedDist = `${common.odinPath()}/${maybeNestedDistName}`;
-  if (fs.existsSync(maybeNestedDist)) {
+  const dir = fs.readdirSync(common.odinPath());
+  if (dir.length == 1) {
     core.info('Moving dist folder');
+
+    const distDir = `${common.odinPath()}/${dir[0]}`;
+
     // Basically does a `mv dist/* .`
-    const entries = fs.readdirSync(maybeNestedDist);
-    await Promise.all(entries.map((entry) => io.mv(`${maybeNestedDist}/${entry}`, `${common.odinPath()}/${entry}`)));
+    const entries = fs.readdirSync(distDir);
+    await Promise.all(entries.map((entry) => io.mv(`${distDir}/${entry}`, `${common.odinPath()}/${entry}`)));
 
     // NOTE: somehow after dev-2024-06 we also need to make it executable again...
     finalizeRelease(inputs);
@@ -364,7 +370,18 @@ async function finalizeRelease(inputs) {
       fs.cpSync(possibleLibLLVMToRename, `${common.odinPath()}/libLLVM-18.so.18.1`);
     }
 
-    await pullOdinBuildDependencies({...inputs, llvmVersion: '18'});
+    let hasDynamicLLVM = false;
+    const dir = fs.readdirSync(common.odinPath());
+    for (const file of dir) {
+      if (file.includes("libLLVM") && file.includes(".so")) {
+        hasDynamicLLVM = true;
+        break;
+      }
+    }
+
+    if (hasDynamicLLVM) {
+      await pullOdinBuildDependencies({...inputs, llvmVersion: '18'});
+    }
   }
 }
 
