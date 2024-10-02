@@ -89821,6 +89821,7 @@ async function downloadRelease(inputs) {
     core.info('Unzipping nested zip');
     const zipInZip = new AdmZip(maybeZipInZip);
     zipInZip.extractAllTo(common.odinPath(), false, true);
+    fs.unlinkSync(maybeZipInZip);
   }
 
   // NOTE: after dev-2024-06 releases don't seem to be doubly zipped anymore
