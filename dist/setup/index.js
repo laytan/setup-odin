@@ -89856,8 +89856,6 @@ async function downloadRelease(inputs) {
 }
 
 async function finalizeRelease(inputs) {
-  exec.exec(`ls -lha ${common.odinPath()}`);
-
   // NOTE: after dev-2024-03 these releases have the executable permission by default, we still 
   // chmod to support older releases.
   if (os.platform() == 'linux' || os.platform() == 'darwin') {
@@ -89873,7 +89871,18 @@ async function finalizeRelease(inputs) {
       fs.cpSync(possibleLibLLVMToRename, `${common.odinPath()}/libLLVM-18.so.18.1`);
     }
 
-    await pullOdinBuildDependencies({...inputs, llvmVersion: '18'});
+    let hasDynamicLLVM = false;
+    const dir = fs.readdirSync(common.odinPath());
+    for (const file of dir) {
+      if (file.includes("libLLVM") && file.includes(".so")) {
+        hasDynamicLLVM = true;
+        break;
+      }
+    }
+
+    if (hasDynamicLLVM) {
+      await pullOdinBuildDependencies({...inputs, llvmVersion: '18'});
+    }
   }
 }
 
