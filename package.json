@@ -1,6 +1,6 @@
 {
   "name": "setup-odin",
-  "version": "2.5.2",
+  "version": "2.6.0",
   "description": "Setup the Odin compiler in GitHub Actions",
   "main": "src/index.js",
   "scripts": {
