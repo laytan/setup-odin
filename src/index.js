@@ -5,6 +5,7 @@ const io = require('@actions/io');
 const github = require('@actions/github');
 const AdmZip = require('adm-zip');
 const fs = require('fs');
+const tar = require('tar');
 
 const os = require('os');
 
@@ -321,6 +322,15 @@ async function downloadRelease(inputs) {
     const zipInZip = new AdmZip(maybeZipInZip);
     zipInZip.extractAllTo(common.odinPath(), false, true);
     fs.unlinkSync(maybeZipInZip);
+  }
+  const maybeTarInZip = `${common.odinPath()}/dist.tar.gz`;
+  if (fs.existsSync(maybeTarInZip)) {
+    core.info('Extracting nested tar.gz');
+    await tar.x({
+      file: maybeTarInZip,
+      cwd: common.odinPath(),
+    });
+    fs.unlinkSync(maybeTarInZip);
   }
 
   // NOTE: after dev-2024-06 releases don't seem to be doubly zipped anymore
