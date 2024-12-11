@@ -6,6 +6,7 @@ const github = require('@actions/github');
 const AdmZip = require('adm-zip');
 const fs = require('fs');
 const tar = require('tar');
+const { Readable } = require('stream');
 
 const os = require('os');
 
@@ -257,6 +258,7 @@ async function downloadRelease(inputs) {
     core.info(`Looking for release tagged: ${inputs.release}`);
     release = await octokit.rest.repos.getReleaseByTag({...repoOpts, tag: inputs.release });
   }
+  core.debug(release);
 
   const releaseOS = {
     'darwin': ['macos'],
@@ -285,6 +287,8 @@ async function downloadRelease(inputs) {
       return false;
   }
 
+  core.debug(asset);
+
   // Linux/Darwin GitHub action runners come with LLVM 14 installed, we add it to path here so we can use
   // its `wasm-ld` and other LLVM binaries that do not come with the Odin release.
   // Because this is only really used for linking, I don't think it really matters if the versions
@@ -308,10 +312,33 @@ async function downloadRelease(inputs) {
     },
   });
 
-  core.info('Unzipping release');
+  core.debug(download);
 
-  const zip = new AdmZip(Buffer.from(download.data));
-  zip.extractAllTo(common.odinPath());
+  // NOTE: after dev-2024-12 non-windows releases are .tar.gz from the get go.
+  if (download.url.includes('.tar.gz')) {
+    core.info('Extracting tar.gz release');
+
+    fs.mkdirSync(common.odinPath());
+    await (new Promise((resolve, reject) => {
+      Readable.from(Buffer.from(download.data))
+        .pipe(tar.x({
+          cwd: common.odinPath(),
+          strip: 1,
+        }))
+        .on('finish', resolve)
+        .on('error', reject);
+    }));
+  } else if (download.url.includes('.zip')) {
+    core.info('Extracting .zip release');
+
+    const zip = new AdmZip(Buffer.from(download.data));
+    zip.extractAllTo(common.odinPath());
+  } else {
+    core.error(`Release download URL is not a .tar.gz or .zip`);
+    return false;
+  }
+
+  core.info('Release extracted');
 
   // NOTE: after dev-2024-03 these releases are zipped in CI and then zipped again by GitHub.
   // So we check and unzip again here.
@@ -323,6 +350,8 @@ async function downloadRelease(inputs) {
     zipInZip.extractAllTo(common.odinPath(), false, true);
     fs.unlinkSync(maybeZipInZip);
   }
+
+  // NOTE: on dev-2024-11 non-windows releases are .zip with a dist.tar.gz file in them.
   const maybeTarInZip = `${common.odinPath()}/dist.tar.gz`;
   if (fs.existsSync(maybeTarInZip)) {
     core.info('Extracting nested tar.gz');
@@ -339,6 +368,7 @@ async function downloadRelease(inputs) {
   // NOTE: dev-2024-07 has 'windows_artifacts' on windows, all others have 'dist'.
 
   const dir = fs.readdirSync(common.odinPath());
+  core.debug(dir);
   if (dir.length == 1) {
     core.info('Moving dist folder');
 
