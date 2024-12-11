@@ -257,6 +257,7 @@ async function downloadRelease(inputs) {
     core.info(`Looking for release tagged: ${inputs.release}`);
     release = await octokit.rest.repos.getReleaseByTag({...repoOpts, tag: inputs.release });
   }
+  core.debug(release);
 
   const releaseOS = {
     'darwin': ['macos'],
@@ -285,6 +286,8 @@ async function downloadRelease(inputs) {
       return false;
   }
 
+  core.debug(`using asset: ${asset}`);
+
   // Linux/Darwin GitHub action runners come with LLVM 14 installed, we add it to path here so we can use
   // its `wasm-ld` and other LLVM binaries that do not come with the Odin release.
   // Because this is only really used for linking, I don't think it really matters if the versions
@@ -308,6 +311,7 @@ async function downloadRelease(inputs) {
     },
   });
 
+  core.debug(download);
   core.info('Unzipping release');
 
   const zip = new AdmZip(Buffer.from(download.data));
