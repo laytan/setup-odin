@@ -25,6 +25,7 @@ async function run() {
     core.addPath(odinPath);
 
     if (inputs.release !== "" && await downloadRelease(inputs)) {
+      await finalizeRelease(inputs);
       core.setOutput('cache-hit', false);
       core.saveState('cache-hit', 'false');
       return;
@@ -377,18 +378,6 @@ async function downloadRelease(inputs) {
     // Basically does a `mv dist/* .`
     const entries = fs.readdirSync(distDir);
     await Promise.all(entries.map((entry) => io.mv(`${distDir}/${entry}`, `${common.odinPath()}/${entry}`)));
-
-    // NOTE: somehow after dev-2024-06 we also need to make it executable again...
-    finalizeRelease(inputs);
-
-    return true;
-  }
-
-  finalizeRelease(inputs);
-
-  // NOTE: Older releases of darwin did not bundle LLVM, from 2023-10 onwards it needs llvm 13 installed via brew.
-  if (os.platform() == 'darwin') {
-    await pullOdinBuildDependencies({ ...inputs, llvmVersion: '13' });
   }
 
   return true;
