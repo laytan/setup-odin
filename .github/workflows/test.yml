@@ -99,4 +99,4 @@ jobs:
       - name: ASM
         run: odin run test-minimal.odin -file -no-crt -default-to-nil-allocator -no-thread-local
         # See Odin #4016
-        if: ${{ matrix.os != 'macos-14' }}
+        if: ${{ matrix.os != 'macos-14' && matrix.os != 'macos-latest' }}
