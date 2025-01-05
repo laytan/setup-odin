@@ -107079,7 +107079,8 @@ async function downloadRelease(inputs) {
   // Because this is only really used for linking, I don't think it really matters if the versions
   // don't match.
   if (os.platform() == 'linux') {
-    core.addPath(`/usr/lib/llvm-14/bin`);
+    core.addPath(`/usr/lib/llvm-18/bin`); // ubuntu-2404
+    core.addPath(`/usr/lib/llvm-14/bin`); // ubuntu-2204
   } else if (os.platform() == 'darwin') {
       // arm64.
       core.addPath(`/opt/homebrew/opt/llvm@15/bin`);
