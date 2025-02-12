@@ -369,8 +369,12 @@ async function downloadRelease(inputs) {
 
   // NOTE: dev-2024-07 has 'windows_artifacts' on windows, all others have 'dist'.
 
-  const dir = fs.readdirSync(common.odinPath());
+  let dir = fs.readdirSync(common.odinPath());
   core.debug(dir);
+
+  // NOTE: sigh... dev-2025-02 has a random __MACOSX folder in the release?
+  dir = dir.filter(name => name !== '__MACOSX');
+
   if (dir.length == 1) {
     core.info('Moving dist folder');
 
