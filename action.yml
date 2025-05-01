@@ -17,8 +17,8 @@ inputs:
     default: 'latest'
     required: false
   llvm-version:
-    description: 'Which version of LLVM to install, supports 11, 12, 13 and 14, this option has no effect on Windows (14 is recommended as this is pre-installed by GitHub)'
-    default: '14'
+    description: 'Which version of LLVM to install'
+    default: '18'
     required: true
   build-type:
     description: 'Type of Odin build, supports "debug", "release" or "release_native"'

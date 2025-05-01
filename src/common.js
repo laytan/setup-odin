@@ -31,10 +31,6 @@ function getInputs() {
     throw new Error(`Given build-type "${buildType}" is not supported, use "debug", "release" or "release_native"`);
   }
 
-  if (!['11', '12', '13', '14', '17', '18'].includes(llvmVersion)) {
-    throw new Error(`Given llvm-version "${llvmVersion}" is not supported, use "11", "12", "13", "14", "17" or "18"`);
-  }
-
   // In case the release isn't available we want to fallback to building that branch from source.
   if (release && release.length > 0) {
     if (release == "false" || release == "False" || release == "FALSE") {

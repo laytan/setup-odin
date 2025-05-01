@@ -205,12 +205,12 @@ async function pullOdinBuildDependencies(inputs) {
           })
           .then((ubuntuVersion) => exec.exec('sudo', ['apt-add-repository', `deb http://apt.llvm.org/${ubuntuVersion}/ llvm-toolchain-${ubuntuVersion}-${llvm} main`]))
           .then(checkCode('unable to add llvm apt repository'))
-          .then(() => exec.exec('sudo', ['apt-fast', 'update']))
+          .then(() => exec.exec('sudo', ['apt-get', 'update']))
           .then(checkCode('unable to update apt repository'))
           .catch((err) => { core.warning(err); });
 
         code = await exec.exec('sudo', [
-          'apt-fast',
+          'apt-get',
           'install',
           '-y',
           `llvm-${llvm}-dev`,
