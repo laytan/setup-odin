@@ -29,7 +29,7 @@ steps:
       # token: false
       # release: latest
       # branch: master
-      # llvm-version: 14
+      # llvm-version: 18
       # build-type: debug
       # repository: https://github.com/odin-lang/Odin
 ```
