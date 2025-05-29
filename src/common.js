@@ -10,7 +10,7 @@ const os = require('os');
  * @property {'latest'|string} release
  * @property {string} branch
  * @property {string} llvmVersion
- * @property {''|'debug'|'release'|'release_native'} buildType
+ * @property {''|'debug'|'release'|'release-native'} buildType
  * @property {string} repository
  * @property {bool} cacheEnabled
  */
@@ -27,8 +27,8 @@ function getInputs() {
   const repository   = core.getInput('repository');
   const cacheEnabled = core.getBooleanInput('cache');
 
-  if (!['', 'debug', 'release', 'release_native'].includes(buildType)) {
-    throw new Error(`Given build-type "${buildType}" is not supported, use "debug", "release" or "release_native"`);
+  if (!['', 'debug', 'release', 'release-native'].includes(buildType)) {
+    throw new Error(`Given build-type "${buildType}" is not supported, use "debug", "release" or "release-native"`);
   }
 
   // In case the release isn't available we want to fallback to building that branch from source.
