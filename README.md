@@ -13,6 +13,8 @@ Installs Odin and adds it to the runner's PATH.
 When the `release` option is set below (default is set to `latest`), the action will download
 a pre-compiled GitHub release instead of building from source.
 
+`release` can also be set to `nightly`, which will download a nightly release published on the Odin website.
+
 To compile from source, set `release` to false or an empty string.
 
 All options are optional and the defaults are commented below.
@@ -36,5 +38,4 @@ steps:
 
 ### TODO
 
- - being able to pull in "nightly" releases
  - being able to pull in specific commit hashes

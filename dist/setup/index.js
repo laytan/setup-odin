@@ -34198,7 +34198,7 @@ module.exports = __toCommonJS(dist_src_exports);
 var import_universal_user_agent = __nccwpck_require__(3843);
 
 // pkg/dist-src/version.js
-var VERSION = "9.0.5";
+var VERSION = "9.0.6";
 
 // pkg/dist-src/defaults.js
 var userAgent = `octokit-endpoint.js/${VERSION} ${(0, import_universal_user_agent.getUserAgent)()}`;
@@ -34303,9 +34303,9 @@ function addQueryParameters(url, parameters) {
 }
 
 // pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex = /\{[^}]+\}/g;
+var urlVariableRegex = /\{[^{}}]+\}/g;
 function removeNonChars(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
+  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
 }
 function extractUrlVariableNames(url) {
   const matches = url.match(urlVariableRegex);
@@ -34491,7 +34491,7 @@ function parse(options) {
     }
     if (url.endsWith("/graphql")) {
       if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
+        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
         headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
           const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
           return `application/vnd.github.${preview}-preview${format}`;
@@ -34740,7 +34740,7 @@ __export(dist_src_exports, {
 module.exports = __toCommonJS(dist_src_exports);
 
 // pkg/dist-src/version.js
-var VERSION = "9.2.1";
+var VERSION = "9.2.2";
 
 // pkg/dist-src/normalize-paginated-list-response.js
 function normalizePaginatedListResponse(response) {
@@ -34788,7 +34788,7 @@ function iterator(octokit, route, parameters) {
           const response = await requestMethod({ method, url, headers });
           const normalizedResponse = normalizePaginatedListResponse(response);
           url = ((normalizedResponse.headers.link || "").match(
-            /<([^>]+)>;\s*rel="next"/
+            /<([^<>]+)>;\s*rel="next"/
           ) || [])[1];
           return { value: normalizedResponse };
         } catch (error) {
@@ -37340,7 +37340,7 @@ var RequestError = class extends Error {
     if (options.request.headers.authorization) {
       requestCopy.headers = Object.assign({}, options.request.headers, {
         authorization: options.request.headers.authorization.replace(
-          / .*$/,
+          /(?<! ) .*$/,
           " [REDACTED]"
         )
       });
@@ -37408,7 +37408,7 @@ var import_endpoint = __nccwpck_require__(4471);
 var import_universal_user_agent = __nccwpck_require__(3843);
 
 // pkg/dist-src/version.js
-var VERSION = "8.4.0";
+var VERSION = "8.4.1";
 
 // pkg/dist-src/is-plain-object.js
 function isPlainObject(value) {
@@ -37467,7 +37467,7 @@ function fetchWrapper(requestOptions) {
       headers[keyAndValue[0]] = keyAndValue[1];
     }
     if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
+      const matches = headers.link && headers.link.match(/<([^<>]+)>; rel="deprecation"/);
       const deprecationLink = matches && matches.pop();
       log.warn(
         `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
@@ -46455,7 +46455,7 @@ function expand(str, isTop) {
   var isOptions = m.body.indexOf(',') >= 0;
   if (!isSequence && !isOptions) {
     // {a},b}
-    if (m.post.match(/,.*\}/)) {
+    if (m.post.match(/,(?!,).*\}/)) {
       str = m.pre + '{' + m.body + escClose + m.post;
       return expand(str);
     }
@@ -61214,7 +61214,7 @@ module.exports = {
 
 
 const { parseSetCookie } = __nccwpck_require__(8915)
-const { stringify, getHeadersList } = __nccwpck_require__(3834)
+const { stringify } = __nccwpck_require__(3834)
 const { webidl } = __nccwpck_require__(4222)
 const { Headers } = __nccwpck_require__(6349)
 
@@ -61290,14 +61290,13 @@ function getSetCookies (headers) {
 
   webidl.brandCheck(headers, Headers, { strict: false })
 
-  const cookies = getHeadersList(headers).cookies
+  const cookies = headers.getSetCookie()
 
   if (!cookies) {
     return []
   }
 
-  // In older versions of undici, cookies is a list of name:value.
-  return cookies.map((pair) => parseSetCookie(Array.isArray(pair) ? pair[1] : pair))
+  return cookies.map((pair) => parseSetCookie(pair))
 }
 
 /**
@@ -61725,14 +61724,15 @@ module.exports = {
 /***/ }),
 
 /***/ 3834:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ ((module) => {
 
 "use strict";
 
 
-const assert = __nccwpck_require__(2613)
-const { kHeadersList } = __nccwpck_require__(6443)
-
+/**
+ * @param {string} value
+ * @returns {boolean}
+ */
 function isCTLExcludingHtab (value) {
   if (value.length === 0) {
     return false
@@ -61993,31 +61993,13 @@ function stringify (cookie) {
   return out.join('; ')
 }
 
-let kHeadersListNode
-
-function getHeadersList (headers) {
-  if (headers[kHeadersList]) {
-    return headers[kHeadersList]
-  }
-
-  if (!kHeadersListNode) {
-    kHeadersListNode = Object.getOwnPropertySymbols(headers).find(
-      (symbol) => symbol.description === 'headers list'
-    )
-
-    assert(kHeadersListNode, 'Headers cannot be parsed')
-  }
-
-  const headersList = headers[kHeadersListNode]
-  assert(headersList)
-
-  return headersList
-}
-
 module.exports = {
   isCTLExcludingHtab,
-  stringify,
-  getHeadersList
+  validateCookieName,
+  validateCookiePath,
+  validateCookieValue,
+  toIMFDate,
+  stringify
 }
 
 
@@ -66021,6 +66003,7 @@ const {
   isValidHeaderName,
   isValidHeaderValue
 } = __nccwpck_require__(5523)
+const util = __nccwpck_require__(9023)
 const { webidl } = __nccwpck_require__(4222)
 const assert = __nccwpck_require__(2613)
 
@@ -66574,6 +66557,9 @@ Object.defineProperties(Headers.prototype, {
   [Symbol.toStringTag]: {
     value: 'Headers',
     configurable: true
+  },
+  [util.inspect.custom]: {
+    enumerable: false
   }
 })
 
@@ -75750,6 +75736,20 @@ class Pool extends PoolBase {
       ? { ...options.interceptors }
       : undefined
     this[kFactory] = factory
+
+    this.on('connectionError', (origin, targets, error) => {
+      // If a connection error occurs, we remove the client from the pool,
+      // and emit a connectionError event. They will not be re-used.
+      // Fixes https://github.com/nodejs/undici/issues/3895
+      for (const target of targets) {
+        // Do not use kRemoveClient here, as it will close the client,
+        // but the client cannot be closed in this state.
+        const idx = this[kClients].indexOf(target)
+        if (idx !== -1) {
+          this[kClients].splice(idx, 1)
+        }
+      }
+    })
   }
 
   [kGetDispatcher] () {
@@ -96930,6 +96930,7 @@ const AdmZip = __nccwpck_require__(1316);
 const fs = __nccwpck_require__(9896);
 const tar = __nccwpck_require__(8116);
 const { Readable } = __nccwpck_require__(2203);
+const httpm = __nccwpck_require__(4844);
 
 const os = __nccwpck_require__(857);
 
@@ -97160,6 +97161,10 @@ async function pullOdinBuildDependencies(inputs) {
   * @return Promise<bool> Whether to return or fallback to git based install.
   */
 async function downloadRelease(inputs) {
+  if (inputs.release == 'nightly') {
+    return downloadNightlyRelease(inputs);
+  }
+
   const parts = inputs.repository.split('/');
   if (parts.length < 2) {
     core.setFailed(`Invalid repository ${inputs.repository}.`);
@@ -97239,13 +97244,65 @@ async function downloadRelease(inputs) {
 
   core.debug(download);
 
+  return extractDownload(download.url, Buffer.from(download.data));
+}
+
+/**
+ *
+ * @return Promise<bool>
+ */
+async function downloadNightlyRelease() {
+  core.info('Downloading nightly release');
+
+  const http = new httpm.HttpClient('setup-odin');
+  const res = await http.get('https://odinbinaries.thisdrunkdane.io/file/odin-binaries/nightly.json');
+  if (res.message.statusCode != 200) {
+    core.error(`could not retrieve nightly releases listing, got status code: ${res.message.statusCode}.`);
+    return false;
+  }
+
+  const body = await res.readBody();
+  core.debug(body);
+  const response = JSON.parse(body);
+  const dates = Object.keys(response.files).sort();
+  const latestNightly = response.files[dates[dates.length - 1]];
+
+  const releaseOS = {
+    'darwin': 'macos',
+    'linux':  'linux',
+    'win32':  'windows',
+  }[os.platform()];
+
+  const releaseArch = {
+    'x64':   'amd64',
+    'arm64': 'arm64',
+  }[os.arch()];
+
+  const searchPrefix = `odin-${releaseOS}-${releaseArch}`;
+  const asset = latestNightly.find(asset => asset.name.startsWith(searchPrefix));
+  if (!asset) {
+    core.error(`Could not find prefix "${searchPrefix}" in asset listing: ${latestNightly.map(asset => asset.name).join(', ')}`);
+    return false;
+  }
+  core.debug(asset);
+
+  const relRes = await http.get(asset.url);
+  if (res.message.statusCode != 200) {
+    core.error(`could not retrieve nightly release, got status code: ${relRes.message.statusCode}.`);
+    return false;
+  }
+
+  return extractDownload(asset.url, await relRes.readBodyBuffer());
+}
+
+async function extractDownload(url, data) {
   // NOTE: after dev-2024-12 non-windows releases are .tar.gz from the get go.
-  if (download.url.includes('.tar.gz')) {
+  if (url.includes('.tar.gz')) {
     core.info('Extracting tar.gz release');
 
     fs.mkdirSync(common.odinPath());
     await (new Promise((resolve, reject) => {
-      Readable.from(Buffer.from(download.data))
+      Readable.from(Buffer.from(data))
         .pipe(tar.x({
           cwd: common.odinPath(),
           strip: 1,
@@ -97253,10 +97310,10 @@ async function downloadRelease(inputs) {
         .on('finish', resolve)
         .on('error', reject);
     }));
-  } else if (download.url.includes('.zip')) {
+  } else if (url.includes('.zip')) {
     core.info('Extracting .zip release');
 
-    const zip = new AdmZip(Buffer.from(download.data));
+    const zip = new AdmZip(Buffer.from(data));
     zip.extractAllTo(common.odinPath());
   } else {
     core.error(`Release download URL is not a .tar.gz or .zip`);
