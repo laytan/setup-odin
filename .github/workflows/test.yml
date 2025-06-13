@@ -23,6 +23,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
         # not doing 13 anymore, see Odin #4017
         llvm-version: [17, 18]
+        build-type: [debug, release, release-native]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
@@ -30,6 +31,7 @@ jobs:
       with:
         llvm-version: ${{ matrix.llvm-version }}
         release: false
+        build-type: ${{ matrix.build-type }}
     - name: Version
       run: odin version
     - name: Report
