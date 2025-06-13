@@ -7,6 +7,7 @@ const AdmZip = require('adm-zip');
 const fs = require('fs');
 const tar = require('tar');
 const { Readable } = require('stream');
+const httpm = require('@actions/http-client');
 
 const os = require('os');
 
@@ -237,6 +238,10 @@ async function pullOdinBuildDependencies(inputs) {
   * @return Promise<bool> Whether to return or fallback to git based install.
   */
 async function downloadRelease(inputs) {
+  if (inputs.release == 'nightly') {
+    return downloadNightlyRelease(inputs);
+  }
+
   const parts = inputs.repository.split('/');
   if (parts.length < 2) {
     core.setFailed(`Invalid repository ${inputs.repository}.`);
@@ -316,13 +321,65 @@ async function downloadRelease(inputs) {
 
   core.debug(download);
 
+  return extractDownload(download.url, Buffer.from(download.data));
+}
+
+/**
+ *
+ * @return Promise<bool>
+ */
+async function downloadNightlyRelease() {
+  core.info('Downloading nightly release');
+
+  const http = new httpm.HttpClient('setup-odin');
+  const res = await http.get('https://odinbinaries.thisdrunkdane.io/file/odin-binaries/nightly.json');
+  if (res.message.statusCode != 200) {
+    core.error(`could not retrieve nightly releases listing, got status code: ${res.message.statusCode}.`);
+    return false;
+  }
+
+  const body = await res.readBody();
+  core.debug(body);
+  const response = JSON.parse(body);
+  const dates = Object.keys(response.files).sort();
+  const latestNightly = response.files[dates[dates.length - 1]];
+
+  const releaseOS = {
+    'darwin': 'macos',
+    'linux':  'linux',
+    'win32':  'windows',
+  }[os.platform()];
+
+  const releaseArch = {
+    'x64':   'amd64',
+    'arm64': 'arm64',
+  }[os.arch()];
+
+  const searchPrefix = `odin-${releaseOS}-${releaseArch}`;
+  const asset = latestNightly.find(asset => asset.name.startsWith(searchPrefix));
+  if (!asset) {
+    core.error(`Could not find prefix "${searchPrefix}" in asset listing: ${latestNightly.map(asset => asset.name).join(', ')}`);
+    return false;
+  }
+  core.debug(asset);
+
+  const relRes = await http.get(asset.url);
+  if (res.message.statusCode != 200) {
+    core.error(`could not retrieve nightly release, got status code: ${relRes.message.statusCode}.`);
+    return false;
+  }
+
+  return extractDownload(asset.url, await relRes.readBodyBuffer());
+}
+
+async function extractDownload(url, data) {
   // NOTE: after dev-2024-12 non-windows releases are .tar.gz from the get go.
-  if (download.url.includes('.tar.gz')) {
+  if (url.includes('.tar.gz')) {
     core.info('Extracting tar.gz release');
 
     fs.mkdirSync(common.odinPath());
     await (new Promise((resolve, reject) => {
-      Readable.from(Buffer.from(download.data))
+      Readable.from(Buffer.from(data))
         .pipe(tar.x({
           cwd: common.odinPath(),
           strip: 1,
@@ -330,10 +387,10 @@ async function downloadRelease(inputs) {
         .on('finish', resolve)
         .on('error', reject);
     }));
-  } else if (download.url.includes('.zip')) {
+  } else if (url.includes('.zip')) {
     core.info('Extracting .zip release');
 
-    const zip = new AdmZip(Buffer.from(download.data));
+    const zip = new AdmZip(Buffer.from(data));
     zip.extractAllTo(common.odinPath());
   } else {
     core.error(`Release download URL is not a .tar.gz or .zip`);

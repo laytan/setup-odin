@@ -41,7 +41,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
-        release: [latest, dev-2024-05]
+        release: [latest, dev-2024-05, nightly]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
