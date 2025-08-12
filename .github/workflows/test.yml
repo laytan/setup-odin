@@ -12,7 +12,7 @@ jobs:
   units:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - run: npm ci
     - run: npm test
 
@@ -26,7 +26,7 @@ jobs:
         build-type: [debug, release, release-native]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: ./
       with:
         llvm-version: ${{ matrix.llvm-version }}
@@ -46,7 +46,7 @@ jobs:
         release: [latest, dev-2024-05, nightly]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: ./
       with:
         release: ${{ matrix.release }}
@@ -65,7 +65,7 @@ jobs:
         odin-version: [master]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: ./
       with:
         branch: ${{ matrix.odin-version }}
@@ -85,7 +85,7 @@ jobs:
         os: [ubuntu-latest, macos-14, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
