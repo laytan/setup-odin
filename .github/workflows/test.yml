@@ -93,6 +93,9 @@ jobs:
         run: odin version
       - name: Report
         run: odin report
+      - name: Get wasm-ld
+        run: brew install lld
+        if: ${{ matrix.os == 'macos-14' || matrix.os == 'macos-latest' }}
       - name: WASM
         run: odin build test.odin -file -target:js_wasm32
       - name: Get NASM
