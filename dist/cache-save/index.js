@@ -67479,6 +67479,8 @@ function getInputs() {
   if (release && release.length > 0) {
     if (release == "false" || release == "False" || release == "FALSE") {
       release = "";
+    } else if (release == "nightly" || release == "latest") {
+      branch = "master";
     } else {
       branch = release;
     }

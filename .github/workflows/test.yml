@@ -42,7 +42,7 @@ jobs:
   test-release:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14, ubuntu-24.04-arm] # macos-14 is an arm machine, #ubuntu-24.04-arm should fall back to building from source.
         release: [latest, dev-2024-05, nightly]
     runs-on: ${{ matrix.os }}
     steps:

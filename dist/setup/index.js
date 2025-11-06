@@ -75392,6 +75392,8 @@ function getInputs() {
   if (release && release.length > 0) {
     if (release == "false" || release == "False" || release == "FALSE") {
       release = "";
+    } else if (release == "nightly" || release == "latest") {
+      branch = "master";
     } else {
       branch = release;
     }
@@ -94179,12 +94181,24 @@ async function run() {
 
     const odinPath = common.odinPath();
     core.addPath(odinPath);
+    if (inputs.release !== "") {
+      const releaseResult = await downloadRelease(inputs);
+      if (releaseResult.ok) {
+        await finalizeRelease(inputs);
+        core.setOutput('cache-hit', false);
+        core.saveState('cache-hit', 'false');
+        return;
+      }
 
-    if (inputs.release !== "" && await downloadRelease(inputs)) {
-      await finalizeRelease(inputs);
-      core.setOutput('cache-hit', false);
-      core.saveState('cache-hit', 'false');
-      return;
+      if (releaseResult.fallback === false) {
+        core.setOutput('cache-hit', false);
+        core.saveState('cache-hit', 'false');
+        return;
+      }
+
+      if (typeof releaseResult.fallback === 'string') {
+        inputs.branch = releaseResult.fallback;
+      }
     }
 
     if (common.cacheCheck(inputs)) {
@@ -94390,22 +94404,32 @@ async function pullOdinBuildDependencies(inputs) {
 /**
   * @param inputs {common.Inputs}
   *
-  * @return Promise<bool> Whether to return or fallback to git based install.
+  * @return Promise<{ok: bool, fallback: bool|string}>
   */
 async function downloadRelease(inputs) {
   if (inputs.release == 'nightly') {
-    return downloadNightlyRelease(inputs);
+    const nightlyOk = await downloadNightlyRelease(inputs);
+    return {
+      ok: nightlyOk,
+      fallback: false,
+    };
   }
 
   const parts = inputs.repository.split('/');
   if (parts.length < 2) {
     core.setFailed(`Invalid repository ${inputs.repository}.`);
-    return true;
+    return {
+      ok: false,
+      fallback: false,
+    };
   }
 
   if (inputs.token == "") {
     core.warning('Invalid access token, falling back to git based install.');
-    return false;
+    return {
+      ok: false,
+      fallback: true,
+    };
   }
 
   const octokit = github.getOctokit(inputs.token);
@@ -94445,7 +94469,10 @@ async function downloadRelease(inputs) {
 
   if (!asset) {
       core.warning('could not find release asset to download, falling back to git based install.');
-      return false;
+      return {
+        ok: false,
+        fallback: release.tag_name,
+      };
   }
 
   core.debug(asset);
@@ -94476,7 +94503,11 @@ async function downloadRelease(inputs) {
 
   core.debug(download);
 
-  return extractDownload(download.url, Buffer.from(download.data));
+  const extractOk = await extractDownload(download.url, Buffer.from(download.data));
+  return {
+    ok: extractOk,
+    fallback: false,
+  };
 }
 
 /**
