@@ -49957,355 +49957,6 @@ function regExpEscape (s) {
 
 /***/ }),
 
-/***/ 8294:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.findMadeSync = exports.findMade = void 0;
-const path_1 = __nccwpck_require__(6928);
-const findMade = async (opts, parent, path) => {
-    // we never want the 'made' return value to be a root directory
-    if (path === parent) {
-        return;
-    }
-    return opts.statAsync(parent).then(st => (st.isDirectory() ? path : undefined), // will fail later
-    // will fail later
-    er => {
-        const fer = er;
-        return fer && fer.code === 'ENOENT'
-            ? (0, exports.findMade)(opts, (0, path_1.dirname)(parent), parent)
-            : undefined;
-    });
-};
-exports.findMade = findMade;
-const findMadeSync = (opts, parent, path) => {
-    if (path === parent) {
-        return undefined;
-    }
-    try {
-        return opts.statSync(parent).isDirectory() ? path : undefined;
-    }
-    catch (er) {
-        const fer = er;
-        return fer && fer.code === 'ENOENT'
-            ? (0, exports.findMadeSync)(opts, (0, path_1.dirname)(parent), parent)
-            : undefined;
-    }
-};
-exports.findMadeSync = findMadeSync;
-//# sourceMappingURL=find-made.js.map
-
-/***/ }),
-
-/***/ 6382:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.mkdirp = exports.nativeSync = exports.native = exports.manualSync = exports.manual = exports.sync = exports.mkdirpSync = exports.useNativeSync = exports.useNative = exports.mkdirpNativeSync = exports.mkdirpNative = exports.mkdirpManualSync = exports.mkdirpManual = void 0;
-const mkdirp_manual_js_1 = __nccwpck_require__(7915);
-const mkdirp_native_js_1 = __nccwpck_require__(1261);
-const opts_arg_js_1 = __nccwpck_require__(2491);
-const path_arg_js_1 = __nccwpck_require__(8686);
-const use_native_js_1 = __nccwpck_require__(8225);
-/* c8 ignore start */
-var mkdirp_manual_js_2 = __nccwpck_require__(7915);
-Object.defineProperty(exports, "mkdirpManual", ({ enumerable: true, get: function () { return mkdirp_manual_js_2.mkdirpManual; } }));
-Object.defineProperty(exports, "mkdirpManualSync", ({ enumerable: true, get: function () { return mkdirp_manual_js_2.mkdirpManualSync; } }));
-var mkdirp_native_js_2 = __nccwpck_require__(1261);
-Object.defineProperty(exports, "mkdirpNative", ({ enumerable: true, get: function () { return mkdirp_native_js_2.mkdirpNative; } }));
-Object.defineProperty(exports, "mkdirpNativeSync", ({ enumerable: true, get: function () { return mkdirp_native_js_2.mkdirpNativeSync; } }));
-var use_native_js_2 = __nccwpck_require__(8225);
-Object.defineProperty(exports, "useNative", ({ enumerable: true, get: function () { return use_native_js_2.useNative; } }));
-Object.defineProperty(exports, "useNativeSync", ({ enumerable: true, get: function () { return use_native_js_2.useNativeSync; } }));
-/* c8 ignore stop */
-const mkdirpSync = (path, opts) => {
-    path = (0, path_arg_js_1.pathArg)(path);
-    const resolved = (0, opts_arg_js_1.optsArg)(opts);
-    return (0, use_native_js_1.useNativeSync)(resolved)
-        ? (0, mkdirp_native_js_1.mkdirpNativeSync)(path, resolved)
-        : (0, mkdirp_manual_js_1.mkdirpManualSync)(path, resolved);
-};
-exports.mkdirpSync = mkdirpSync;
-exports.sync = exports.mkdirpSync;
-exports.manual = mkdirp_manual_js_1.mkdirpManual;
-exports.manualSync = mkdirp_manual_js_1.mkdirpManualSync;
-exports.native = mkdirp_native_js_1.mkdirpNative;
-exports.nativeSync = mkdirp_native_js_1.mkdirpNativeSync;
-exports.mkdirp = Object.assign(async (path, opts) => {
-    path = (0, path_arg_js_1.pathArg)(path);
-    const resolved = (0, opts_arg_js_1.optsArg)(opts);
-    return (0, use_native_js_1.useNative)(resolved)
-        ? (0, mkdirp_native_js_1.mkdirpNative)(path, resolved)
-        : (0, mkdirp_manual_js_1.mkdirpManual)(path, resolved);
-}, {
-    mkdirpSync: exports.mkdirpSync,
-    mkdirpNative: mkdirp_native_js_1.mkdirpNative,
-    mkdirpNativeSync: mkdirp_native_js_1.mkdirpNativeSync,
-    mkdirpManual: mkdirp_manual_js_1.mkdirpManual,
-    mkdirpManualSync: mkdirp_manual_js_1.mkdirpManualSync,
-    sync: exports.mkdirpSync,
-    native: mkdirp_native_js_1.mkdirpNative,
-    nativeSync: mkdirp_native_js_1.mkdirpNativeSync,
-    manual: mkdirp_manual_js_1.mkdirpManual,
-    manualSync: mkdirp_manual_js_1.mkdirpManualSync,
-    useNative: use_native_js_1.useNative,
-    useNativeSync: use_native_js_1.useNativeSync,
-});
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 7915:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.mkdirpManual = exports.mkdirpManualSync = void 0;
-const path_1 = __nccwpck_require__(6928);
-const opts_arg_js_1 = __nccwpck_require__(2491);
-const mkdirpManualSync = (path, options, made) => {
-    const parent = (0, path_1.dirname)(path);
-    const opts = { ...(0, opts_arg_js_1.optsArg)(options), recursive: false };
-    if (parent === path) {
-        try {
-            return opts.mkdirSync(path, opts);
-        }
-        catch (er) {
-            // swallowed by recursive implementation on posix systems
-            // any other error is a failure
-            const fer = er;
-            if (fer && fer.code !== 'EISDIR') {
-                throw er;
-            }
-            return;
-        }
-    }
-    try {
-        opts.mkdirSync(path, opts);
-        return made || path;
-    }
-    catch (er) {
-        const fer = er;
-        if (fer && fer.code === 'ENOENT') {
-            return (0, exports.mkdirpManualSync)(path, opts, (0, exports.mkdirpManualSync)(parent, opts, made));
-        }
-        if (fer && fer.code !== 'EEXIST' && fer && fer.code !== 'EROFS') {
-            throw er;
-        }
-        try {
-            if (!opts.statSync(path).isDirectory())
-                throw er;
-        }
-        catch (_) {
-            throw er;
-        }
-    }
-};
-exports.mkdirpManualSync = mkdirpManualSync;
-exports.mkdirpManual = Object.assign(async (path, options, made) => {
-    const opts = (0, opts_arg_js_1.optsArg)(options);
-    opts.recursive = false;
-    const parent = (0, path_1.dirname)(path);
-    if (parent === path) {
-        return opts.mkdirAsync(path, opts).catch(er => {
-            // swallowed by recursive implementation on posix systems
-            // any other error is a failure
-            const fer = er;
-            if (fer && fer.code !== 'EISDIR') {
-                throw er;
-            }
-        });
-    }
-    return opts.mkdirAsync(path, opts).then(() => made || path, async (er) => {
-        const fer = er;
-        if (fer && fer.code === 'ENOENT') {
-            return (0, exports.mkdirpManual)(parent, opts).then((made) => (0, exports.mkdirpManual)(path, opts, made));
-        }
-        if (fer && fer.code !== 'EEXIST' && fer.code !== 'EROFS') {
-            throw er;
-        }
-        return opts.statAsync(path).then(st => {
-            if (st.isDirectory()) {
-                return made;
-            }
-            else {
-                throw er;
-            }
-        }, () => {
-            throw er;
-        });
-    });
-}, { sync: exports.mkdirpManualSync });
-//# sourceMappingURL=mkdirp-manual.js.map
-
-/***/ }),
-
-/***/ 1261:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.mkdirpNative = exports.mkdirpNativeSync = void 0;
-const path_1 = __nccwpck_require__(6928);
-const find_made_js_1 = __nccwpck_require__(8294);
-const mkdirp_manual_js_1 = __nccwpck_require__(7915);
-const opts_arg_js_1 = __nccwpck_require__(2491);
-const mkdirpNativeSync = (path, options) => {
-    const opts = (0, opts_arg_js_1.optsArg)(options);
-    opts.recursive = true;
-    const parent = (0, path_1.dirname)(path);
-    if (parent === path) {
-        return opts.mkdirSync(path, opts);
-    }
-    const made = (0, find_made_js_1.findMadeSync)(opts, path);
-    try {
-        opts.mkdirSync(path, opts);
-        return made;
-    }
-    catch (er) {
-        const fer = er;
-        if (fer && fer.code === 'ENOENT') {
-            return (0, mkdirp_manual_js_1.mkdirpManualSync)(path, opts);
-        }
-        else {
-            throw er;
-        }
-    }
-};
-exports.mkdirpNativeSync = mkdirpNativeSync;
-exports.mkdirpNative = Object.assign(async (path, options) => {
-    const opts = { ...(0, opts_arg_js_1.optsArg)(options), recursive: true };
-    const parent = (0, path_1.dirname)(path);
-    if (parent === path) {
-        return await opts.mkdirAsync(path, opts);
-    }
-    return (0, find_made_js_1.findMade)(opts, path).then((made) => opts
-        .mkdirAsync(path, opts)
-        .then(m => made || m)
-        .catch(er => {
-        const fer = er;
-        if (fer && fer.code === 'ENOENT') {
-            return (0, mkdirp_manual_js_1.mkdirpManual)(path, opts);
-        }
-        else {
-            throw er;
-        }
-    }));
-}, { sync: exports.mkdirpNativeSync });
-//# sourceMappingURL=mkdirp-native.js.map
-
-/***/ }),
-
-/***/ 2491:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.optsArg = void 0;
-const fs_1 = __nccwpck_require__(9896);
-const optsArg = (opts) => {
-    if (!opts) {
-        opts = { mode: 0o777 };
-    }
-    else if (typeof opts === 'object') {
-        opts = { mode: 0o777, ...opts };
-    }
-    else if (typeof opts === 'number') {
-        opts = { mode: opts };
-    }
-    else if (typeof opts === 'string') {
-        opts = { mode: parseInt(opts, 8) };
-    }
-    else {
-        throw new TypeError('invalid options argument');
-    }
-    const resolved = opts;
-    const optsFs = opts.fs || {};
-    opts.mkdir = opts.mkdir || optsFs.mkdir || fs_1.mkdir;
-    opts.mkdirAsync = opts.mkdirAsync
-        ? opts.mkdirAsync
-        : async (path, options) => {
-            return new Promise((res, rej) => resolved.mkdir(path, options, (er, made) => er ? rej(er) : res(made)));
-        };
-    opts.stat = opts.stat || optsFs.stat || fs_1.stat;
-    opts.statAsync = opts.statAsync
-        ? opts.statAsync
-        : async (path) => new Promise((res, rej) => resolved.stat(path, (err, stats) => (err ? rej(err) : res(stats))));
-    opts.statSync = opts.statSync || optsFs.statSync || fs_1.statSync;
-    opts.mkdirSync = opts.mkdirSync || optsFs.mkdirSync || fs_1.mkdirSync;
-    return resolved;
-};
-exports.optsArg = optsArg;
-//# sourceMappingURL=opts-arg.js.map
-
-/***/ }),
-
-/***/ 8686:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.pathArg = void 0;
-const platform = process.env.__TESTING_MKDIRP_PLATFORM__ || process.platform;
-const path_1 = __nccwpck_require__(6928);
-const pathArg = (path) => {
-    if (/\0/.test(path)) {
-        // simulate same failure that node raises
-        throw Object.assign(new TypeError('path must be a string without null bytes'), {
-            path,
-            code: 'ERR_INVALID_ARG_VALUE',
-        });
-    }
-    path = (0, path_1.resolve)(path);
-    if (platform === 'win32') {
-        const badWinChars = /[*|"<>?:]/;
-        const { root } = (0, path_1.parse)(path);
-        if (badWinChars.test(path.substring(root.length))) {
-            throw Object.assign(new Error('Illegal characters in path.'), {
-                path,
-                code: 'EINVAL',
-            });
-        }
-    }
-    return path;
-};
-exports.pathArg = pathArg;
-//# sourceMappingURL=path-arg.js.map
-
-/***/ }),
-
-/***/ 8225:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.useNative = exports.useNativeSync = void 0;
-const fs_1 = __nccwpck_require__(9896);
-const opts_arg_js_1 = __nccwpck_require__(2491);
-const version = process.env.__TESTING_MKDIRP_NODE_VERSION__ || process.version;
-const versArr = version.replace(/^v/, '').split('.');
-const hasNative = +versArr[0] > 10 || (+versArr[0] === 10 && +versArr[1] >= 12);
-exports.useNativeSync = !hasNative
-    ? () => false
-    : (opts) => (0, opts_arg_js_1.optsArg)(opts).mkdirSync === fs_1.mkdirSync;
-exports.useNative = Object.assign(!hasNative
-    ? () => false
-    : (opts) => (0, opts_arg_js_1.optsArg)(opts).mkdir === fs_1.mkdir, {
-    sync: exports.useNativeSync,
-});
-//# sourceMappingURL=use-native.js.map
-
-/***/ }),
-
 /***/ 744:
 /***/ ((module) => {
 
@@ -75706,6 +75357,14 @@ module.exports = require("node:fs");
 
 /***/ }),
 
+/***/ 1455:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:fs/promises");
+
+/***/ }),
+
 /***/ 7067:
 /***/ ((module) => {
 
@@ -88463,32 +88122,72 @@ exports.constants = Object.freeze(Object.assign(Object.create(null), {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.BrotliDecompress = exports.BrotliCompress = exports.Brotli = exports.Unzip = exports.InflateRaw = exports.DeflateRaw = exports.Gunzip = exports.Gzip = exports.Inflate = exports.Deflate = exports.Zlib = exports.ZlibError = exports.constants = void 0;
+exports.ZstdDecompress = exports.ZstdCompress = exports.BrotliDecompress = exports.BrotliCompress = exports.Unzip = exports.InflateRaw = exports.DeflateRaw = exports.Gunzip = exports.Gzip = exports.Inflate = exports.Deflate = exports.Zlib = exports.ZlibError = exports.constants = void 0;
 const assert_1 = __importDefault(__nccwpck_require__(2613));
 const buffer_1 = __nccwpck_require__(181);
 const minipass_1 = __nccwpck_require__(8275);
-const zlib_1 = __importDefault(__nccwpck_require__(3106));
+const realZlib = __importStar(__nccwpck_require__(3106));
 const constants_js_1 = __nccwpck_require__(5474);
 var constants_js_2 = __nccwpck_require__(5474);
 Object.defineProperty(exports, "constants", ({ enumerable: true, get: function () { return constants_js_2.constants; } }));
 const OriginalBufferConcat = buffer_1.Buffer.concat;
+const desc = Object.getOwnPropertyDescriptor(buffer_1.Buffer, 'concat');
+const noop = (args) => args;
+const passthroughBufferConcat = desc?.writable === true || desc?.set !== undefined
+    ? (makeNoOp) => {
+        buffer_1.Buffer.concat = makeNoOp ? noop : OriginalBufferConcat;
+    }
+    : (_) => { };
 const _superWrite = Symbol('_superWrite');
 class ZlibError extends Error {
     code;
     errno;
-    constructor(err) {
-        super('zlib: ' + err.message);
+    constructor(err, origin) {
+        super('zlib: ' + err.message, { cause: err });
         this.code = err.code;
         this.errno = err.errno;
         /* c8 ignore next */
         if (!this.code)
             this.code = 'ZLIB_ERROR';
         this.message = 'zlib: ' + err.message;
-        Error.captureStackTrace(this, this.constructor);
+        Error.captureStackTrace(this, origin ?? this.constructor);
     }
     get name() {
         return 'ZlibError';
@@ -88529,15 +88228,19 @@ class ZlibBase extends minipass_1.Minipass {
         this.#finishFlushFlag = opts.finishFlush ?? 0;
         this.#fullFlushFlag = opts.fullFlushFlag ?? 0;
         /* c8 ignore stop */
+        //@ts-ignore
+        if (typeof realZlib[mode] !== 'function') {
+            throw new TypeError('Compression method not supported: ' + mode);
+        }
         // this will throw if any options are invalid for the class selected
         try {
             // @types/node doesn't know that it exports the classes, but they're there
             //@ts-ignore
-            this.#handle = new zlib_1.default[mode](opts);
+            this.#handle = new realZlib[mode](opts);
         }
         catch (er) {
             // make sure that all errors get decorated properly
-            throw new ZlibError(er);
+            throw new ZlibError(er, this.constructor);
         }
         this.#onError = err => {
             // no sense raising multiple errors, since we abort on the first one.
@@ -88623,7 +88326,7 @@ class ZlibBase extends minipass_1.Minipass {
         this.#handle.close = () => { };
         // It also calls `Buffer.concat()` at the end, which may be convenient
         // for some, but which we are not interested in as it slows us down.
-        buffer_1.Buffer.concat = args => args;
+        passthroughBufferConcat(true);
         let result = undefined;
         try {
             const flushFlag = typeof chunk[_flushFlag] === 'number'
@@ -88631,13 +88334,13 @@ class ZlibBase extends minipass_1.Minipass {
                 : this.#flushFlag;
             result = this.#handle._processChunk(chunk, flushFlag);
             // if we don't throw, reset it back how it was
-            buffer_1.Buffer.concat = OriginalBufferConcat;
+            passthroughBufferConcat(false);
         }
         catch (err) {
             // or if we do, put Buffer.concat() back before we emit error
             // Error events call into user code, which may call Buffer.concat()
-            buffer_1.Buffer.concat = OriginalBufferConcat;
-            this.#onError(new ZlibError(err));
+            passthroughBufferConcat(false);
+            this.#onError(new ZlibError(err, this.write));
         }
         finally {
             if (this.#handle) {
@@ -88656,7 +88359,7 @@ class ZlibBase extends minipass_1.Minipass {
             }
         }
         if (this.#handle)
-            this.#handle.on('error', er => this.#onError(new ZlibError(er)));
+            this.#handle.on('error', er => this.#onError(new ZlibError(er, this.write)));
         let writeReturn;
         if (result) {
             if (Array.isArray(result) && result.length > 0) {
@@ -88800,7 +88503,6 @@ class Brotli extends ZlibBase {
         super(opts, mode);
     }
 }
-exports.Brotli = Brotli;
 class BrotliCompress extends Brotli {
     constructor(opts) {
         super(opts, 'BrotliCompress');
@@ -88813,6 +88515,27 @@ class BrotliDecompress extends Brotli {
     }
 }
 exports.BrotliDecompress = BrotliDecompress;
+class Zstd extends ZlibBase {
+    constructor(opts, mode) {
+        opts = opts || {};
+        opts.flush = opts.flush || constants_js_1.constants.ZSTD_e_continue;
+        opts.finishFlush = opts.finishFlush || constants_js_1.constants.ZSTD_e_end;
+        opts.fullFlushFlag = constants_js_1.constants.ZSTD_e_flush;
+        super(opts, mode);
+    }
+}
+class ZstdCompress extends Zstd {
+    constructor(opts) {
+        super(opts, 'ZstdCompress');
+    }
+}
+exports.ZstdCompress = ZstdCompress;
+class ZstdDecompress extends Zstd {
+    constructor(opts) {
+        super(opts, 'ZstdDecompress');
+    }
+}
+exports.ZstdDecompress = ZstdDecompress;
 //# sourceMappingURL=index.js.map
 
 /***/ }),
@@ -89127,12 +88850,13 @@ class Header {
         if (!buf || !(buf.length >= off + 512)) {
             throw new Error('need 512 bytes for header');
         }
-        this.path = decString(buf, off, 100);
-        this.mode = decNumber(buf, off + 100, 8);
-        this.uid = decNumber(buf, off + 108, 8);
-        this.gid = decNumber(buf, off + 116, 8);
-        this.size = decNumber(buf, off + 124, 12);
-        this.mtime = decDate(buf, off + 136, 12);
+        this.path = ex?.path ?? decString(buf, off, 100);
+        this.mode = ex?.mode ?? gex?.mode ?? decNumber(buf, off + 100, 8);
+        this.uid = ex?.uid ?? gex?.uid ?? decNumber(buf, off + 108, 8);
+        this.gid = ex?.gid ?? gex?.gid ?? decNumber(buf, off + 116, 8);
+        this.size = ex?.size ?? gex?.size ?? decNumber(buf, off + 124, 12);
+        this.mtime =
+            ex?.mtime ?? gex?.mtime ?? decDate(buf, off + 136, 12);
         this.cksum = decNumber(buf, off + 148, 12);
         // if we have extended or global extended headers, apply them now
         // See https://github.com/npm/node-tar/pull/187
@@ -89160,11 +88884,15 @@ class Header {
         this.linkpath = decString(buf, off + 157, 100);
         if (buf.subarray(off + 257, off + 265).toString() ===
             'ustar\u000000') {
-            this.uname = decString(buf, off + 265, 32);
-            this.gname = decString(buf, off + 297, 32);
             /* c8 ignore start */
-            this.devmaj = decNumber(buf, off + 329, 8) ?? 0;
-            this.devmin = decNumber(buf, off + 337, 8) ?? 0;
+            this.uname =
+                ex?.uname ?? gex?.uname ?? decString(buf, off + 265, 32);
+            this.gname =
+                ex?.gname ?? gex?.gname ?? decString(buf, off + 297, 32);
+            this.devmaj =
+                ex?.devmaj ?? gex?.devmaj ?? decNumber(buf, off + 329, 8) ?? 0;
+            this.devmin =
+                ex?.devmin ?? gex?.devmin ?? decNumber(buf, off + 337, 8) ?? 0;
             /* c8 ignore stop */
             if (buf[off + 475] !== 0) {
                 // definitely a prefix, definitely >130 chars.
@@ -89176,8 +88904,12 @@ class Header {
                 if (prefix) {
                     this.path = prefix + '/' + this.path;
                 }
-                this.atime = decDate(buf, off + 476, 12);
-                this.ctime = decDate(buf, off + 488, 12);
+                /* c8 ignore start */
+                this.atime =
+                    ex?.atime ?? gex?.atime ?? decDate(buf, off + 476, 12);
+                this.ctime =
+                    ex?.ctime ?? gex?.ctime ?? decDate(buf, off + 488, 12);
+                /* c8 ignore stop */
             }
         }
         let sum = 8 * 0x20;
@@ -89616,17 +89348,21 @@ const listFileSync = (opt) => {
     const file = opt.file;
     let fd;
     try {
-        const stat = node_fs_1.default.statSync(file);
+        fd = node_fs_1.default.openSync(file, 'r');
+        const stat = node_fs_1.default.fstatSync(fd);
         const readSize = opt.maxReadSize || 16 * 1024 * 1024;
         if (stat.size < readSize) {
-            p.end(node_fs_1.default.readFileSync(file));
+            const buf = Buffer.allocUnsafe(stat.size);
+            const read = node_fs_1.default.readSync(fd, buf, 0, stat.size, 0);
+            p.end(read === buf.byteLength ? buf : buf.subarray(0, read));
         }
         else {
             let pos = 0;
             const buf = Buffer.allocUnsafe(readSize);
-            fd = node_fs_1.default.openSync(file, 'r');
             while (pos < stat.size) {
                 const bytesRead = node_fs_1.default.readSync(fd, buf, 0, readSize, pos);
+                if (bytesRead === 0)
+                    break;
                 pos += bytesRead;
                 p.write(buf.subarray(0, bytesRead));
             }
@@ -89755,16 +89491,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.mkdirSync = exports.mkdir = void 0;
 const chownr_1 = __nccwpck_require__(9052);
-const fs_1 = __importDefault(__nccwpck_require__(9896));
-const mkdirp_1 = __nccwpck_require__(6382);
+const node_fs_1 = __importDefault(__nccwpck_require__(3024));
+const promises_1 = __importDefault(__nccwpck_require__(1455));
 const node_path_1 = __importDefault(__nccwpck_require__(6760));
 const cwd_error_js_1 = __nccwpck_require__(8425);
 const normalize_windows_path_js_1 = __nccwpck_require__(7867);
 const symlink_error_js_1 = __nccwpck_require__(4028);
-const cGet = (cache, key) => cache.get((0, normalize_windows_path_js_1.normalizeWindowsPath)(key));
-const cSet = (cache, key, val) => cache.set((0, normalize_windows_path_js_1.normalizeWindowsPath)(key), val);
 const checkCwd = (dir, cb) => {
-    fs_1.default.stat(dir, (er, st) => {
+    node_fs_1.default.stat(dir, (er, st) => {
         if (er || !st.isDirectory()) {
             er = new cwd_error_js_1.CwdError(dir, er?.code || 'ENOTDIR');
         }
@@ -89772,7 +89506,7 @@ const checkCwd = (dir, cb) => {
     });
 };
 /**
- * Wrapper around mkdirp for tar's needs.
+ * Wrapper around fs/promises.mkdir for tar's needs.
  *
  * The main purpose is to avoid creating directories if we know that
  * they already exist (and track which ones exist for this purpose),
@@ -89794,68 +89528,60 @@ const mkdir = (dir, opt, cb) => {
         (uid !== opt.processUid || gid !== opt.processGid);
     const preserve = opt.preserve;
     const unlink = opt.unlink;
-    const cache = opt.cache;
     const cwd = (0, normalize_windows_path_js_1.normalizeWindowsPath)(opt.cwd);
     const done = (er, created) => {
         if (er) {
             cb(er);
         }
         else {
-            cSet(cache, dir, true);
             if (created && doChown) {
                 (0, chownr_1.chownr)(created, uid, gid, er => done(er));
             }
             else if (needChmod) {
-                fs_1.default.chmod(dir, mode, cb);
+                node_fs_1.default.chmod(dir, mode, cb);
             }
             else {
                 cb();
             }
         }
     };
-    if (cache && cGet(cache, dir) === true) {
-        return done();
-    }
     if (dir === cwd) {
         return checkCwd(dir, done);
     }
     if (preserve) {
-        return (0, mkdirp_1.mkdirp)(dir, { mode }).then(made => done(null, made ?? undefined), // oh, ts
+        return promises_1.default.mkdir(dir, { mode, recursive: true }).then(made => done(null, made ?? undefined), // oh, ts
         done);
     }
     const sub = (0, normalize_windows_path_js_1.normalizeWindowsPath)(node_path_1.default.relative(cwd, dir));
     const parts = sub.split('/');
-    mkdir_(cwd, parts, mode, cache, unlink, cwd, undefined, done);
+    mkdir_(cwd, parts, mode, unlink, cwd, undefined, done);
 };
 exports.mkdir = mkdir;
-const mkdir_ = (base, parts, mode, cache, unlink, cwd, created, cb) => {
+const mkdir_ = (base, parts, mode, unlink, cwd, created, cb) => {
     if (!parts.length) {
         return cb(null, created);
     }
     const p = parts.shift();
     const part = (0, normalize_windows_path_js_1.normalizeWindowsPath)(node_path_1.default.resolve(base + '/' + p));
-    if (cGet(cache, part)) {
-        return mkdir_(part, parts, mode, cache, unlink, cwd, created, cb);
-    }
-    fs_1.default.mkdir(part, mode, onmkdir(part, parts, mode, cache, unlink, cwd, created, cb));
+    node_fs_1.default.mkdir(part, mode, onmkdir(part, parts, mode, unlink, cwd, created, cb));
 };
-const onmkdir = (part, parts, mode, cache, unlink, cwd, created, cb) => (er) => {
+const onmkdir = (part, parts, mode, unlink, cwd, created, cb) => (er) => {
     if (er) {
-        fs_1.default.lstat(part, (statEr, st) => {
+        node_fs_1.default.lstat(part, (statEr, st) => {
             if (statEr) {
                 statEr.path =
                     statEr.path && (0, normalize_windows_path_js_1.normalizeWindowsPath)(statEr.path);
                 cb(statEr);
             }
             else if (st.isDirectory()) {
-                mkdir_(part, parts, mode, cache, unlink, cwd, created, cb);
+                mkdir_(part, parts, mode, unlink, cwd, created, cb);
             }
             else if (unlink) {
-                fs_1.default.unlink(part, er => {
+                node_fs_1.default.unlink(part, er => {
                     if (er) {
                         return cb(er);
                     }
-                    fs_1.default.mkdir(part, mode, onmkdir(part, parts, mode, cache, unlink, cwd, created, cb));
+                    node_fs_1.default.mkdir(part, mode, onmkdir(part, parts, mode, unlink, cwd, created, cb));
                 });
             }
             else if (st.isSymbolicLink()) {
@@ -89868,14 +89594,14 @@ const onmkdir = (part, parts, mode, cache, unlink, cwd, created, cb) => (er) => 
     }
     else {
         created = created || part;
-        mkdir_(part, parts, mode, cache, unlink, cwd, created, cb);
+        mkdir_(part, parts, mode, unlink, cwd, created, cb);
     }
 };
 const checkCwdSync = (dir) => {
     let ok = false;
     let code = undefined;
     try {
-        ok = fs_1.default.statSync(dir).isDirectory();
+        ok = node_fs_1.default.statSync(dir).isDirectory();
     }
     catch (er) {
         code = er?.code;
@@ -89901,51 +89627,40 @@ const mkdirSync = (dir, opt) => {
         (uid !== opt.processUid || gid !== opt.processGid);
     const preserve = opt.preserve;
     const unlink = opt.unlink;
-    const cache = opt.cache;
     const cwd = (0, normalize_windows_path_js_1.normalizeWindowsPath)(opt.cwd);
     const done = (created) => {
-        cSet(cache, dir, true);
         if (created && doChown) {
             (0, chownr_1.chownrSync)(created, uid, gid);
         }
         if (needChmod) {
-            fs_1.default.chmodSync(dir, mode);
+            node_fs_1.default.chmodSync(dir, mode);
         }
     };
-    if (cache && cGet(cache, dir) === true) {
-        return done();
-    }
     if (dir === cwd) {
         checkCwdSync(cwd);
         return done();
     }
     if (preserve) {
-        return done((0, mkdirp_1.mkdirpSync)(dir, mode) ?? undefined);
+        return done(node_fs_1.default.mkdirSync(dir, { mode, recursive: true }) ?? undefined);
     }
     const sub = (0, normalize_windows_path_js_1.normalizeWindowsPath)(node_path_1.default.relative(cwd, dir));
     const parts = sub.split('/');
     let created = undefined;
     for (let p = parts.shift(), part = cwd; p && (part += '/' + p); p = parts.shift()) {
         part = (0, normalize_windows_path_js_1.normalizeWindowsPath)(node_path_1.default.resolve(part));
-        if (cGet(cache, part)) {
-            continue;
-        }
         try {
-            fs_1.default.mkdirSync(part, mode);
+            node_fs_1.default.mkdirSync(part, mode);
             created = created || part;
-            cSet(cache, part, true);
         }
         catch (er) {
-            const st = fs_1.default.lstatSync(part);
+            const st = node_fs_1.default.lstatSync(part);
             if (st.isDirectory()) {
-                cSet(cache, part, true);
                 continue;
             }
             else if (unlink) {
-                fs_1.default.unlinkSync(part);
-                fs_1.default.mkdirSync(part, mode);
+                node_fs_1.default.unlinkSync(part);
+                node_fs_1.default.mkdirSync(part, mode);
                 created = created || part;
-                cSet(cache, part, true);
                 continue;
             }
             else if (st.isSymbolicLink()) {
@@ -90008,12 +89723,29 @@ exports.normalizeUnicode = void 0;
 // within npm install on large package trees.
 // Do not edit without careful benchmarking.
 const normalizeCache = Object.create(null);
-const { hasOwnProperty } = Object.prototype;
+// Limit the size of this. Very low-sophistication LRU cache
+const MAX = 10000;
+const cache = new Set();
 const normalizeUnicode = (s) => {
-    if (!hasOwnProperty.call(normalizeCache, s)) {
+    if (!cache.has(s)) {
         normalizeCache[s] = s.normalize('NFD');
     }
-    return normalizeCache[s];
+    else {
+        cache.delete(s);
+    }
+    cache.add(s);
+    const ret = normalizeCache[s];
+    let i = cache.size - MAX;
+    // only prune when we're 10% over the max
+    if (i > MAX / 10) {
+        for (const s of cache) {
+            cache.delete(s);
+            delete normalizeCache[s];
+            if (--i <= 0)
+                break;
+        }
+    }
+    return ret;
 };
 exports.normalizeUnicode = normalizeUnicode;
 //# sourceMappingURL=normalize-unicode.js.map
@@ -90220,6 +89952,14 @@ class Pack extends minipass_1.Minipass {
     jobs;
     [WRITEENTRYCLASS];
     onWriteEntry;
+    // Note: we actually DO need a linked list here, because we
+    // shift() to update the head of the list where we start, but still
+    // while that happens, need to know what the next item in the queue
+    // will be. Since we do multiple jobs in parallel, it's not as simple
+    // as just an Array.shift(), since that would lose the information about
+    // the next job in the list. We could add a .next field on the PackJob
+    // class, but then we'd have to be tracking the tail of the queue the
+    // whole time, and Yallist just does that for us anyway.
     [QUEUE];
     [JOBS] = 0;
     [PROCESSING] = false;
@@ -90244,9 +89984,12 @@ class Pack extends minipass_1.Minipass {
             this.on('warn', opt.onwarn);
         }
         this.portable = !!opt.portable;
-        if (opt.gzip || opt.brotli) {
-            if (opt.gzip && opt.brotli) {
-                throw new TypeError('gzip and brotli are mutually exclusive');
+        if (opt.gzip || opt.brotli || opt.zstd) {
+            if ((opt.gzip ? 1 : 0) +
+                (opt.brotli ? 1 : 0) +
+                (opt.zstd ? 1 : 0) >
+                1) {
+                throw new TypeError('gzip, brotli, zstd are mutually exclusive');
             }
             if (opt.gzip) {
                 if (typeof opt.gzip !== 'object') {
@@ -90262,6 +90005,12 @@ class Pack extends minipass_1.Minipass {
                     opt.brotli = {};
                 }
                 this.zip = new zlib.BrotliCompress(opt.brotli);
+            }
+            if (opt.zstd) {
+                if (typeof opt.zstd !== 'object') {
+                    opt.zstd = {};
+                }
+                this.zip = new zlib.ZstdCompress(opt.zstd);
             }
             /* c8 ignore next */
             if (!this.zip)
@@ -90605,7 +90354,7 @@ exports.PackSync = PackSync;
 // the full 512 bytes of a header to come in.  We will Buffer.concat()
 // it to the next write(), which is a mem copy, but a small one.
 //
-// this[QUEUE] is a Yallist of entries that haven't been emitted
+// this[QUEUE] is a list of entries that haven't been emitted
 // yet this can only get filled up if the user keeps write()ing after
 // a write() returns false, or does a write() with more than one entry
 //
@@ -90624,13 +90373,14 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Parser = void 0;
 const events_1 = __nccwpck_require__(4434);
 const minizlib_1 = __nccwpck_require__(7119);
-const yallist_1 = __nccwpck_require__(6762);
 const header_js_1 = __nccwpck_require__(883);
 const pax_js_1 = __nccwpck_require__(9509);
 const read_entry_js_1 = __nccwpck_require__(1991);
 const warn_method_js_1 = __nccwpck_require__(1154);
 const maxMetaEntrySize = 1024 * 1024;
 const gzipHeader = Buffer.from([0x1f, 0x8b]);
+const zstdHeader = Buffer.from([0x28, 0xb5, 0x2f, 0xfd]);
+const ZIP_HEADER_LEN = Math.max(gzipHeader.length, zstdHeader.length);
 const STATE = Symbol('state');
 const WRITEENTRY = Symbol('writeEntry');
 const READENTRY = Symbol('readEntry');
@@ -90668,9 +90418,10 @@ class Parser extends events_1.EventEmitter {
     maxMetaEntrySize;
     filter;
     brotli;
+    zstd;
     writable = true;
     readable = false;
-    [QUEUE] = new yallist_1.Yallist();
+    [QUEUE] = [];
     [BUFFER];
     [READENTRY];
     [WRITEENTRY];
@@ -90720,9 +90471,17 @@ class Parser extends events_1.EventEmitter {
         // if it's a tbr file it MIGHT be brotli, but we don't know until
         // we look at it and verify it's not a valid tar file.
         this.brotli =
-            !opt.gzip && opt.brotli !== undefined ? opt.brotli
+            !(opt.gzip || opt.zstd) && opt.brotli !== undefined ? opt.brotli
                 : isTBR ? undefined
                     : false;
+        // zstd has magic bytes to identify it, but we also support explicit options
+        // and file extension detection
+        const isTZST = opt.file &&
+            (opt.file.endsWith('.tar.zst') || opt.file.endsWith('.tzst'));
+        this.zstd =
+            !(opt.gzip || opt.brotli) && opt.zstd !== undefined ? opt.zstd
+                : isTZST ? true
+                    : undefined;
         // have to set this so that streams are ok piping into it
         this.on('end', () => this[CLOSESTREAM]());
         if (typeof opt.onwarn === 'function') {
@@ -90976,7 +90735,7 @@ class Parser extends events_1.EventEmitter {
             cb?.();
             return false;
         }
-        // first write, might be gzipped
+        // first write, might be gzipped, zstd, or brotli compressed
         const needSniff = this[UNZIP] === undefined ||
             (this.brotli === undefined && this[UNZIP] === false);
         if (needSniff && chunk) {
@@ -90984,7 +90743,7 @@ class Parser extends events_1.EventEmitter {
                 chunk = Buffer.concat([this[BUFFER], chunk]);
                 this[BUFFER] = undefined;
             }
-            if (chunk.length < gzipHeader.length) {
+            if (chunk.length < ZIP_HEADER_LEN) {
                 this[BUFFER] = chunk;
                 /* c8 ignore next */
                 cb?.();
@@ -90996,7 +90755,18 @@ class Parser extends events_1.EventEmitter {
                     this[UNZIP] = false;
                 }
             }
-            const maybeBrotli = this.brotli === undefined;
+            // look for zstd header if gzip header not found
+            let isZstd = false;
+            if (this[UNZIP] === false && this.zstd !== false) {
+                isZstd = true;
+                for (let i = 0; i < zstdHeader.length; i++) {
+                    if (chunk[i] !== zstdHeader[i]) {
+                        isZstd = false;
+                        break;
+                    }
+                }
+            }
+            const maybeBrotli = this.brotli === undefined && !isZstd;
             if (this[UNZIP] === false && maybeBrotli) {
                 // read the first header to see if it's a valid tar file. If so,
                 // we can safely assume that it's not actually brotli, despite the
@@ -91026,13 +90796,13 @@ class Parser extends events_1.EventEmitter {
                 }
             }
             if (this[UNZIP] === undefined ||
-                (this[UNZIP] === false && this.brotli)) {
+                (this[UNZIP] === false && (this.brotli || isZstd))) {
                 const ended = this[ENDED];
                 this[ENDED] = false;
                 this[UNZIP] =
-                    this[UNZIP] === undefined ?
-                        new minizlib_1.Unzip({})
-                        : new minizlib_1.BrotliDecompress({});
+                    this[UNZIP] === undefined ? new minizlib_1.Unzip({})
+                        : isZstd ? new minizlib_1.ZstdDecompress({})
+                            : new minizlib_1.BrotliDecompress({});
                 this[UNZIP].on('data', chunk => this[CONSUMECHUNK](chunk));
                 this[UNZIP].on('error', er => this.abort(er));
                 this[UNZIP].on('end', () => {
@@ -91187,7 +90957,7 @@ class Parser extends events_1.EventEmitter {
             }
             else {
                 this[ENDED] = true;
-                if (this.brotli === undefined)
+                if (this.brotli === undefined || this.zstd === undefined)
                     chunk = chunk || Buffer.alloc(0);
                 if (chunk)
                     this.write(chunk);
@@ -91917,6 +91687,7 @@ exports.replace = (0, make_command_js_1.makeCommand)(replaceSync, replaceAsync,
     }
     if (opt.gzip ||
         opt.brotli ||
+        opt.zstd ||
         opt.file.endsWith('.br') ||
         opt.file.endsWith('.tbr')) {
         throw new TypeError('cannot append to compressed archives');
@@ -92118,17 +91889,14 @@ const node_fs_1 = __importDefault(__nccwpck_require__(3024));
 const node_path_1 = __importDefault(__nccwpck_require__(6760));
 const get_write_flag_js_1 = __nccwpck_require__(1781);
 const mkdir_js_1 = __nccwpck_require__(5867);
-const normalize_unicode_js_1 = __nccwpck_require__(4629);
 const normalize_windows_path_js_1 = __nccwpck_require__(7867);
 const parse_js_1 = __nccwpck_require__(535);
 const strip_absolute_path_js_1 = __nccwpck_require__(6252);
-const strip_trailing_slashes_js_1 = __nccwpck_require__(3335);
 const wc = __importStar(__nccwpck_require__(3525));
 const path_reservations_js_1 = __nccwpck_require__(2865);
 const ONENTRY = Symbol('onEntry');
 const CHECKFS = Symbol('checkFs');
 const CHECKFS2 = Symbol('checkFs2');
-const PRUNECACHE = Symbol('pruneCache');
 const ISREUSABLE = Symbol('isReusable');
 const MAKEFS = Symbol('makeFs');
 const FILE = Symbol('file');
@@ -92196,31 +91964,6 @@ const unlinkFileSync = (path) => {
 const uint32 = (a, b, c) => a !== undefined && a === a >>> 0 ? a
     : b !== undefined && b === b >>> 0 ? b
         : c;
-// clear the cache if it's a case-insensitive unicode-squashing match.
-// we can't know if the current file system is case-sensitive or supports
-// unicode fully, so we check for similarity on the maximally compatible
-// representation.  Err on the side of pruning, since all it's doing is
-// preventing lstats, and it's not the end of the world if we get a false
-// positive.
-// Note that on windows, we always drop the entire cache whenever a
-// symbolic link is encountered, because 8.3 filenames are impossible
-// to reason about, and collisions are hazards rather than just failures.
-const cacheKeyNormalize = (path) => (0, strip_trailing_slashes_js_1.stripTrailingSlashes)((0, normalize_windows_path_js_1.normalizeWindowsPath)((0, normalize_unicode_js_1.normalizeUnicode)(path))).toLowerCase();
-// remove all cache entries matching ${abs}/**
-const pruneCache = (cache, abs) => {
-    abs = cacheKeyNormalize(abs);
-    for (const path of cache.keys()) {
-        const pnorm = cacheKeyNormalize(path);
-        if (pnorm === abs || pnorm.indexOf(abs + '/') === 0) {
-            cache.delete(path);
-        }
-    }
-};
-const dropCache = (cache) => {
-    for (const key of cache.keys()) {
-        cache.delete(key);
-    }
-};
 class Unpack extends parse_js_1.Parser {
     [ENDED] = false;
     [CHECKED_CWD] = false;
@@ -92229,7 +91972,6 @@ class Unpack extends parse_js_1.Parser {
     transform;
     writable = true;
     readable = false;
-    dirCache;
     uid;
     gid;
     setOwner;
@@ -92258,7 +92000,6 @@ class Unpack extends parse_js_1.Parser {
         };
         super(opt);
         this.transform = opt.transform;
-        this.dirCache = opt.dirCache || new Map();
         this.chmod = !!opt.chmod;
         if (typeof opt.uid === 'number' || typeof opt.gid === 'number') {
             // need both or neither
@@ -92483,7 +92224,6 @@ class Unpack extends parse_js_1.Parser {
             umask: this.processUmask,
             preserve: this.preservePaths,
             unlink: this.unlink,
-            cache: this.dirCache,
             cwd: this.cwd,
             mode: mode,
         }, cb);
@@ -92661,28 +92401,8 @@ class Unpack extends parse_js_1.Parser {
         }
         this.reservations.reserve(paths, done => this[CHECKFS2](entry, done));
     }
-    [PRUNECACHE](entry) {
-        // if we are not creating a directory, and the path is in the dirCache,
-        // then that means we are about to delete the directory we created
-        // previously, and it is no longer going to be a directory, and neither
-        // is any of its children.
-        // If a symbolic link is encountered, all bets are off.  There is no
-        // reasonable way to sanitize the cache in such a way we will be able to
-        // avoid having filesystem collisions.  If this happens with a non-symlink
-        // entry, it'll just fail to unpack, but a symlink to a directory, using an
-        // 8.3 shortname or certain unicode attacks, can evade detection and lead
-        // to arbitrary writes to anywhere on the system.
-        if (entry.type === 'SymbolicLink') {
-            dropCache(this.dirCache);
-        }
-        else if (entry.type !== 'Directory') {
-            pruneCache(this.dirCache, String(entry.absolute));
-        }
-    }
     [CHECKFS2](entry, fullyDone) {
-        this[PRUNECACHE](entry);
         const done = (er) => {
-            this[PRUNECACHE](entry);
             fullyDone(er);
         };
         const checkCwd = () => {
@@ -92811,7 +92531,6 @@ class UnpackSync extends Unpack {
         return super[MAKEFS](er, entry, () => { });
     }
     [CHECKFS](entry) {
-        this[PRUNECACHE](entry);
         if (!this[CHECKED_CWD]) {
             const er = this[MKDIR](this.cwd, this.dmode);
             if (er) {
@@ -92883,10 +92602,15 @@ class UnpackSync extends Unpack {
         let fd;
         try {
             fd = node_fs_1.default.openSync(String(entry.absolute), (0, get_write_flag_js_1.getWriteFlag)(entry.size), mode);
+            /* c8 ignore start - This is only a problem if the file was successfully
+             * statted, BUT failed to open. Testing this is annoying, and we
+             * already have ample testint for other uses of oner() methods.
+             */
         }
         catch (er) {
             return oner(er);
         }
+        /* c8 ignore stop */
         const tx = this.transform ? this.transform(entry) || entry : entry;
         if (tx !== entry) {
             tx.on('error', (er) => this[ONERROR](er, entry));
@@ -92973,7 +92697,6 @@ class UnpackSync extends Unpack {
                 umask: this.processUmask,
                 preserve: this.preservePaths,
                 unlink: this.unlink,
-                cache: this.dirCache,
                 cwd: this.cwd,
                 mode: mode,
             });
