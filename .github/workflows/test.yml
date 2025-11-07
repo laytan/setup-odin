@@ -20,7 +20,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         # not doing 13 anymore, see Odin #4017
         llvm-version: [17, 18]
         build-type: [debug, release, release-native]
@@ -42,7 +42,7 @@ jobs:
   test-release:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14, ubuntu-24.04-arm] # macos-14 is an arm machine, #ubuntu-24.04-arm should fall back to building from source.
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel, ubuntu-24.04-arm] # ubuntu-24.04-arm should fall back to building from source.
         release: [latest, dev-2024-05, nightly]
     runs-on: ${{ matrix.os }}
     steps:
@@ -61,7 +61,7 @@ jobs:
   test-with-cache:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14] # macos-14 is an arm machine.
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         odin-version: [master]
     runs-on: ${{ matrix.os }}
     steps:
@@ -82,7 +82,7 @@ jobs:
   test-auxiliary:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-14, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-15-intel, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -95,7 +95,7 @@ jobs:
         run: odin report
       - name: Get wasm-ld
         run: brew install lld
-        if: ${{ matrix.os == 'macos-14' || matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest' }}
       - name: WASM
         run: odin build test.odin -file -target:js_wasm32
       - name: Get NASM
@@ -104,4 +104,4 @@ jobs:
       - name: ASM
         run: odin run test-minimal.odin -file -no-crt -default-to-nil-allocator -no-thread-local
         # See Odin #4016
-        if: ${{ matrix.os != 'macos-14' && matrix.os != 'macos-latest' }}
+        if: ${{ matrix.os != 'macos-15-intel' && matrix.os != 'macos-latest' }}
