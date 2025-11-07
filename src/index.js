@@ -311,7 +311,7 @@ async function downloadRelease(inputs) {
   }
 
   // Releases dev-2025-10 and dev-2025-11 released arm64 based builds instead of amd64. See Odin #5845.
-  if (releaseOS == 'macos' && releaseArch == 'amd64' && ['dev-2025-10', 'dev-2025-11'].includes(release.tag_name)) {
+  if (releaseOS.includes('macos') && releaseArch == 'amd64' && ['dev-2025-10', 'dev-2025-11'].includes(release.tag_name)) {
     core.warning('this release is meant for amd64 but was built for arm64 due to a bug in Odin\'s CI, falling back to git based install.');
     return {
       ok: false,
