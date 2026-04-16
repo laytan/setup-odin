@@ -1,9 +1,9 @@
-const cache = require('@actions/cache');
-const core = require('@actions/core');
+import * as cache from '@actions/cache';
+import * as core from '@actions/core';
 
-const os = require('os');
+import os from 'os';
 
-const common = require('./common');
+import * as common from './common.js';
 
 async function run() {
   try {

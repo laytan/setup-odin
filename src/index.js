@@ -1,17 +1,16 @@
-const exec = require('@actions/exec');
-const core = require('@actions/core');
-const cache = require('@actions/cache');
-const io = require('@actions/io');
-const github = require('@actions/github');
-const AdmZip = require('adm-zip');
-const fs = require('fs');
-const tar = require('tar');
-const { Readable } = require('stream');
-const httpm = require('@actions/http-client');
+import * as exec from '@actions/exec';
+import * as core from '@actions/core';
+import * as cache from '@actions/cache';
+import * as io from '@actions/io';
+import * as github from '@actions/github';
+import AdmZip from 'adm-zip';
+import fs from 'fs';
+import * as tar from 'tar';
+import { Readable } from 'stream';
+import * as httpm from '@actions/http-client';
+import os from 'os';
 
-const os = require('os');
-
-const common = require('./common');
+import * as common from './common.js';
 
 // most @actions toolkit packages have async methods
 async function run() {
