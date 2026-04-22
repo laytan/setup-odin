@@ -29,7 +29,7 @@
     "@actions/core": "^3.0.1",
     "@actions/exec": "^3.0.0",
     "@actions/github": "^9.1.1",
-    "@actions/http-client": "^4.0.0",
+    "@actions/http-client": "^4.0.1",
     "@actions/io": "^3.0.2",
     "adm-zip": "^0.5.17",
     "tar": "^7.5.13"
