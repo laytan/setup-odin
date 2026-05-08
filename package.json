@@ -32,7 +32,7 @@
     "@actions/http-client": "^4.0.1",
     "@actions/io": "^3.0.2",
     "adm-zip": "^0.5.17",
-    "tar": "^7.5.13"
+    "tar": "^7.5.15"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.4",
